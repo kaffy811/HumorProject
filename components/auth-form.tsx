@@ -1,0 +1,15 @@
+'use client';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+export function AuthForm(){
+ const [mode,setMode]=useState<'login'|'signup'>('login');const [busy,setBusy]=useState(false);const [message,setMessage]=useState('');const router=useRouter();
+ async function submit(e:React.FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);setMessage('');const form=new FormData(e.currentTarget);
+ try{const db=createClient();const input={email:String(form.get('email')).trim(),password:String(form.get('password'))};
+ if(mode==='signup'){const {data,error}=await db.auth.signUp({...input,options:{emailRedirectTo:`${window.location.origin}/auth/callback`}});if(error)throw error;if(data.session){router.replace('/');router.refresh();}else setMessage('Check your email to confirm your account, then come back to sign in.');}
+ else{const {error}=await db.auth.signInWithPassword(input);if(error)throw error;router.replace('/');router.refresh();}}
+ catch(e){setMessage(e instanceof Error?e.message:'Sign-in failed. Please try again.');}finally{setBusy(false);}}
+ async function google(){setBusy(true);setMessage('');const db=createClient();const {error}=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:`${window.location.origin}/auth/callback`}});if(error){setMessage(error.message);setBusy(false);}}
+ return <><div className="auth-tabs"><button aria-pressed={mode==='login'} disabled={busy} onClick={()=>{setMode('login');setMessage('');}}>Sign in</button><button aria-pressed={mode==='signup'} disabled={busy} onClick={()=>{setMode('signup');setMessage('');}}>Create account</button></div><form onSubmit={submit}><label>Email<input type="email" name="email" required autoComplete="email" placeholder="you@columbia.edu" disabled={busy}/></label><label>Password<input type="password" name="password" required minLength={8} maxLength={128} autoComplete={mode==='signup'?'new-password':'current-password'} placeholder="At least 8 characters" disabled={busy}/></label><button className="button wide" disabled={busy}>{busy?'One moment…':mode==='signup'?'Join the club ↗':'Back to the good stuff ↗'}</button></form>{process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED==='true'&&<button className="button secondary wide" onClick={google} disabled={busy}>Continue with Google</button>}<p role="status" aria-live="polite" className="form-message">{message}</p><p className="fine-print">Your email stays private. Your uploaded photos are shared with club members after generation.</p></>;
+}
+export function SignOut(){const [busy,setBusy]=useState(false);const [error,setError]=useState('');const router=useRouter();return <><button className="nav-login" disabled={busy} onClick={async()=>{setBusy(true);const {error}=await createClient().auth.signOut();if(error){setError('Could not sign out. Try again.');setBusy(false);}else{router.replace('/');router.refresh();}}}>{busy?'Signing out…':'Sign out ↗'}</button>{error&&<span role="alert">{error}</span>}</>;}
