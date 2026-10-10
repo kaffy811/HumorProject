@@ -1,10 +1,13 @@
 import { sameOrigin } from "@/lib/humor-validation";
-import { createClient } from "@/lib/supabase/server";
+import { profileComplete } from "@/lib/profile";
+import { memberAuth } from "@/lib/member-auth";
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return Response.json({error:"Invalid origin"},{status:403});
-  const db = await createClient();
-  const {data:{user}} = await db.auth.getUser();
+  const { db, user } = await memberAuth();
   if (!user) return Response.json({error:"Sign in to vote."},{status:401});
+  const { data: profile, error: profileError } = await db.from('profiles').select('first_name,last_name,username,avatar_path').eq('id', user.id).maybeSingle();
+  if (profileError) return Response.json({error:'Unable to load your profile.'},{status:503});
+  if (!profileComplete(profile)) return Response.json({error:'Complete your Profile before voting.'},{status:403});
   const body = await request.json().catch(()=>null);
   if (!body || !/^[0-9a-f-]{36}$/i.test(body.captionId) || ![1,-1].includes(body.value)) return Response.json({error:"Invalid vote."},{status:400});
   const {error} = await db.from("humor_votes").insert({user_id:user.id,caption_id:body.captionId,value:body.value});

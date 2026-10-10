@@ -7,8 +7,9 @@ for(const endpoint of ['vote','generate']){
 for(const origin of ['https://attacker.example','null']){
  const response=await fetch(`${base}/api/humor/vote`,{method:'POST',headers:{Origin:origin}});assert.equal(response.status,403);
 }
-const landing=await fetch(base);assert.equal(landing.status,200);assert.match(await landing.text(),/Life.s a sidequest/);
-const login=await fetch(`${base}/login`);assert.equal(login.status,200);assert.match(await login.text(),/Create account/);
+const landing=await fetch(base);assert.equal(landing.status,200);assert.match(await landing.text(),/Funnier/);
+const login=await fetch(`${base}/login`);assert.equal(login.status,200);assert.match(await login.text(),/Continue with Google/);
+assert.doesNotMatch(await (await fetch(`${base}/login`)).text(), /signInWithPassword|name="password"|Create account/);
 console.log('PASS public landing/login, anonymous vote/upload denial, cross-origin denial');
 
 for (const route of ['profile','studio','feed']) {

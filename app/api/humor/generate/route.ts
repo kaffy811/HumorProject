@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { createClient } from '@/lib/supabase/server';
+import { memberAuth } from '@/lib/member-auth';
 import { createClient as adminClient } from '@supabase/supabase-js';
 import { config } from '@/lib/supabase/config';
 import { imageType, sameOrigin } from '@/lib/humor-validation';
@@ -8,12 +8,11 @@ import { geminiSettings, generateCaptions, SYSTEM_PROMPT, USER_PROMPT, GENERATIO
 export const maxDuration = 120;
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return Response.json({ error: 'Invalid origin' }, { status: 403 });
-  const db = await createClient();
-  const { data: { user } } = await db.auth.getUser();
+  const { db, user } = await memberAuth();
   if (!user) return Response.json({ error: 'Sign in to upload.' }, { status: 401 });
-  const { data: profile, error: profileError } = await db.from('profiles').select('first_name,last_name,avatar_path').eq('id', user.id).maybeSingle();
+  const { data: profile, error: profileError } = await db.from('profiles').select('first_name,last_name,username,avatar_path').eq('id', user.id).maybeSingle();
   if (profileError) return Response.json({ error: 'Unable to load your profile. Please try again.' }, { status: 503 });
-  if (!profileComplete(profile)) return Response.json({ error: 'Complete your name in Profile before generating.' }, { status: 403 });
+  if (!profileComplete(profile)) return Response.json({ error: 'Complete your username, name and photo in Profile before generating.' }, { status: 403 });
   const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!secret || !process.env.GEMINI_API_KEY) return Response.json({ error: 'The caption studio is awaiting server configuration. Please try again later.' }, { status: 503 });
   if (process.env.AI_ENABLED === 'false') return Response.json({ error: 'New captions are temporarily paused. You can still vote on existing jokes.' }, { status: 503 });

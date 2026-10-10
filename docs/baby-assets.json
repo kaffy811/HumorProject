@@ -1,0 +1,52 @@
+{
+  "tool": "Built-in image_gen",
+  "reference": "Four user-provided reference screenshots, with explicit authorization to create new poses.",
+  "smirk_prompt": "Use case: stylized-concept. Asset type: Humor Project website mascot, individual PNG pose smirk.png. Input images: all four are character identity references, not layouts. Create one high quality full body 3D cartoon rendering of exactly this little cheeky baby: short dark bowl-cut hair, light warm tan skin, very large rounded head, half-lidded dark eyes, expressive dark eyebrows, small pursed asymmetric smirking mouth, chubby little body and short legs, bare feet, wearing only a simple white diaper. Preserve the reference identity, proportions and smug deadpan personality. Pose: relaxed upright standing, one hand loosely resting at hip, the other relaxed, subtle tilted head and confident crooked smirk. Studio soft warm lighting, toy-like smooth 3D shading. Center full body at consistent medium distance, feet visible, generous 10% margins on every side, single character on pure white #FFFFFF background. No text, no letters, no captions, no extra characters, no props, no watermark. Square 1024 by 1024 PNG. This is an age-appropriate nonsexual cartoon mascot.",
+  "poses": {
+    "wink": {
+      "prompt": "Use case: identity-preserve. Asset type: wink.png individual website mascot pose. Reference image is the approved mascot; preserve exactly the same baby identity, short dark hair, warm tan skin, dark eyes, rounded head, body proportions, smooth soft 3D-rendered skin, simple white diaper, bare feet. Change only facial expression and pose: Standing, left eye playfully winking, slight smirk, one little hand waving. Same centered full-body framing, same camera angle and subject scale as reference, whole head and feet visible with generous margins. Pure white #FFFFFF background, soft warm studio lighting. One character only. No words, captions, watermark or extraneous objects. Age-appropriate nonsexual cartoon baby mascot. PNG square.",
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-6fe8de4d-4b48-48b7-9cce-343f61199bf2.png"
+    },
+    "flirt": {
+      "prompt": "Edit this cartoon mascot illustration. Preserve the clothing, body, face identity, white background, composition, and all framing exactly. Change only expression: lift eyebrows very slightly and make the smile cheerful and welcoming. Leave the reference hand-on-hip pose unchanged. No text or additional objects.",
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-57de6fed-a9f5-40a3-9c8b-0aaa4fc58fb7.png"
+    },
+    "giggle": {
+      "prompt": "Use case: stylized-concept. Create one pose of the same cute 3D cartoon baby mascot shown in the reference. Preserve the same face, short dark hair, warm tan skin, proportions, plain white diaper and bare feet. Expression and pose: Standing, one hand covering mouth while quietly giggling, eyes slightly squinted, shoulders raised. Full body centered, entire head and feet visible, generous margins. Match reference scale and camera. Pure white background, soft studio lighting, polished toy-like 3D render. No text or watermark.",
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-ecb64c1d-1316-4bbb-86ec-59f0305f5966.png"
+    },
+    "smug": {
+      "prompt": "Use case: stylized-concept. Create one pose of the same cute 3D cartoon baby mascot shown in the reference. Preserve the same face, short dark hair, warm tan skin, proportions, plain white diaper and bare feet. Expression and pose: Standing with arms firmly folded across chest, eyebrows raised, knowing superior half-lidded smirk. Full body centered, entire head and feet visible, generous margins. Match reference scale and camera. Pure white background, soft studio lighting, polished toy-like 3D render. No text or watermark.",
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-93952a80-7ec4-4356-a79c-14b8c8640317.png"
+    },
+    "pout": {
+      "prompt": "Use case: stylized-concept. Create one pose of the same cute 3D cartoon baby mascot shown in the reference. Preserve the same face, short dark hair, warm tan skin, proportions, plain white diaper and bare feet. Expression and pose: Standing with arms folded, lower lip pushed out in an exaggerated childish pout, irritated eyebrows. Full body centered, entire head and feet visible, generous margins. Match reference scale and camera. Pure white background, soft studio lighting, polished toy-like 3D render. No text or watermark.",
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-425942e0-4ac6-43e2-87a9-0d1543aad8d7.png"
+    },
+    "cry": {
+      "prompt": "Use case: stylized-concept. Create one pose of the same cute 3D cartoon baby mascot shown in the reference. Preserve the same face, short dark hair, warm tan skin, proportions, plain white diaper and bare feet. Expression and pose: Standing, genuinely sad with exaggerated large cartoon tears trailing down cheeks, drooping mouth, hands lowered. Full body centered, entire head and feet visible, generous margins. Match reference scale and camera. Pure white background, soft studio lighting, polished toy-like 3D render. No text or watermark.",
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-74df9d19-007b-45f4-a1ba-6d6246162ab7.png"
+    },
+    "huh": {
+      "prompt": "Use case: stylized-concept. Create one pose of the same cute 3D cartoon baby mascot shown in the reference. Preserve the same face, short dark hair, warm tan skin, proportions, plain white diaper and bare feet. Expression and pose: Standing with one hand scratching side of head, puzzled sideways eyebrows and pursed lips, inquisitive face. Full body centered, entire head and feet visible, generous margins. Match reference scale and camera. Pure white background, soft studio lighting, polished toy-like 3D render. No text or watermark.",
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-26b1a4aa-28d5-4867-b3c3-2bf659d98b96.png"
+    },
+    "gasp": {
+      "prompt": "Use case: stylized-concept. Create one pose of the same cute 3D cartoon baby mascot shown in the reference. Preserve the same face, short dark hair, warm tan skin, proportions, plain white diaper and bare feet. Expression and pose: Standing with eyes wide open and small round open mouth, palms near cheeks, surprised. Full body centered, entire head and feet visible, generous margins. Match reference scale and camera. Pure white background, soft studio lighting, polished toy-like 3D render. No text or watermark.",
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-751654aa-7870-4888-ad03-780339e5834a.png"
+    },
+    "sleepy": {
+      "prompt": "Use case: stylized-concept. Create one pose of the same cute 3D cartoon baby mascot shown in the reference. Preserve the same face, short dark hair, warm tan skin, proportions, plain white diaper and bare feet. Expression and pose: Standing sleepily with both eyes almost closed, little yawn, one hand rubbing eye, slumped shoulders. Full body centered, entire head and feet visible, generous margins. Match reference scale and camera. Pure white background, soft studio lighting, polished toy-like 3D render. No text or watermark.",
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-f1d73b59-ccdf-45c5-8fd8-d8e7eface65c.png"
+    },
+    "angel": {
+      "prompt": "Edit this cartoon mascot illustration. Preserve the clothing, body, face identity, white background, composition, and all framing exactly. Change only expression to a gentle innocent smile. Add one small thin golden cartoon halo above the head. Leave the pose unchanged. No text or other objects.",
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-57de6fed-a9f5-40a3-9c8b-0aaa4fc58fb7.png",
+      "note": "Dedicated render rejected by generation service; reuse approved welcoming pose plus a CSS golden halo. No distinct angel render is claimed."
+    },
+    "heart": {
+      "prompt": "Use case: stylized-concept. Create one pose of the same cute 3D cartoon baby mascot shown in the reference. Preserve the same face, short dark hair, warm tan skin, proportions, plain white diaper and bare feet. Expression and pose: Standing smiling warmly, holding a large tomato-red heart in front of chest. Heart should be clearly visible and simple, no text. Full body centered, entire head and feet visible, generous margins. Match reference scale and camera. Pure white background, soft studio lighting, polished toy-like 3D render. No text or watermark.",
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-9066d91f-8c37-491b-a00b-071245298640.png"
+    }
+  }
+}

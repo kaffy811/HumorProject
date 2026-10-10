@@ -27,18 +27,18 @@ Gemini runs on the server only. The browser never sees the key. One structured i
    - Site URL: `https://humor-project-lac.vercel.app`
    - Redirect URLs: `https://humor-project-lac.vercel.app/auth/callback`
    - Add the exact final deployment URL + `/auth/callback` when it is available.
-   - For local testing, add `http://127.0.0.1:3006/auth/callback` if needed.
-8. Reload /login. The Google button appears automatically when Supabase reports Google enabled; there is no separate NEXT_PUBLIC_GOOGLE_AUTH_ENABLED flag to manage.
+   - For local testing, add `http://localhost:3007/auth/callback` if needed.
+8. Reload /login. The Google button is the only login action; OAuth becomes available when Supabase reports Google enabled; there is no separate NEXT_PUBLIC_GOOGLE_AUTH_ENABLED flag to manage.
 9. App redirectTo is exactly `${origin}/auth/callback`, without additional query parameters. Supabase first receives Google's result at its own callback, then returns to the app callback. These two URLs serve different hops of the same OAuth flow.
-10. Test sign-out → Google login → name prompt → Profile → Studio, including on the final submission deployment.
+10. Test sign-out → Google login → username/name/avatar onboarding → Feed → Studio, including on the final submission deployment.
 
 ## Database migration
 
-202610090001_profiles_gemini.sql was applied to wqkpatxsbxwjsupojjcq on 2026-10-09. Do not run it twice. New projects apply the original migration first, then the new one. The auth.users trigger creates nullable-name profiles; existing accounts were backfilled. All five public application tables have RLS. Avatar objects are private and owner-only.
+202610090001_profiles_gemini.sql was applied to wqkpatxsbxwjsupojjcq on 2026-10-09; 202610100001_google_onboarding.sql was applied on 2026-10-10. Do not run either twice. New projects apply all three migrations in filename order. The auth.users trigger creates nullable-name profiles; existing accounts were backfilled. All five public application tables have RLS. Avatar objects are private and owner-only.
 
 ## Deployment protection and submissions
 
-The application has its own authentication. Vercel Standard Protection still requires Vercel login on commit deployment URLs until the owner approves disabling it. Verify with a request containing no cookies: the commit URL must return the app, not a Vercel SSO redirect. The final commit-specific application URL, not the vercel.com dashboard URL or rolling production alias, goes in Submissions.
+The application has its own authentication. Vercel Require Log In was disabled with owner approval on 2026-10-09. Verify with a request containing no cookies: the commit URL must return the app, not a Vercel SSO redirect. The final commit-specific application URL, not the vercel.com dashboard URL or rolling production alias, goes in Submissions.
 
 Earlier submissions all point to hello-world. This repository must remain isolated from Clearstock/hello-world per its AGENTS.md. Only the course PM can confirm whether a separate repository is accepted as the continuation. Do not rewrite the previous application or assignment history to hide this difference.
 
@@ -51,3 +51,8 @@ Official references:
 - https://ai.google.dev/gemini-api/docs/generate-content/structured-output
 - https://ai.google.dev/gemini-api/docs/models
 - https://supabase.com/docs/guides/auth/social-login/auth-google
+
+
+Status observed on 2026-10-10: Gemini key saved and real image generation/voting passed in the preceding release. Supabase Google provider remains disabled with blank Client ID/Secret; real Google sign-in and new onboarding await owner configuration. The user must privately create/enter/submit the OAuth credentials; these cannot be replaced by a Gemini API key. All other social providers should remain disabled so an OAuth session linked to a Google identity cannot originate from another social provider.
+
+Site URL and the exact production `/auth/callback` redirect URL were corrected to `https://humor-project-lac.vercel.app` on 2026-10-10. Older unrelated-pattern redirect entries were preserved; no broad new wildcard was added. Add only the exact final deployment callback for grading.

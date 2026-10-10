@@ -1,5 +1,1 @@
-import { AuthForm } from '@/components/auth-form';
-import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
-import { googleAvailable } from '@/lib/google-auth';
-export default async function Login({searchParams}:{searchParams:Promise<{error?:string}>}){const db=await createClient();const {data:{user}}=await db.auth.getUser();if(user)redirect('/studio');const {error}=await searchParams;return <section className="auth-page"><div className="auth-copy"><span className="eyebrow">YOUR PEOPLE. YOUR KIND OF WEIRD.</span><h1>Welcome to<br/>the group chat<br/><em>with punchlines.</em></h1><p>Campus moments, city chaos, and photos that deserve better captions.</p><div className="sticker">VERY ONLINE.<br/>VERY WELCOME.</div></div><div className="auth-card"><span className="eyebrow">MEMBERS GET THE MIC</span><h2>Find your funny.</h2>{error&&<p className="error" role="alert">That sign-in link could not be verified. Please try signing in again.</p>}<AuthForm googleEnabled={await googleAvailable()}/></div></section>;}
+export { default, dynamic } from '../page';

@@ -1,10 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { createClient } from '@/lib/supabase/server';
+import { memberAuth } from '@/lib/member-auth';
 import { imageType, sameOrigin } from '@/lib/humor-validation';
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return Response.json({ error: 'Invalid origin' }, { status: 403 });
-  const db = await createClient();
-  const { data: { user } } = await db.auth.getUser();
+  const { db, user } = await memberAuth();
   if (!user) return Response.json({ error: 'Sign in to upload a profile photo.' }, { status: 401 });
   if (Number(request.headers.get('content-length')) > 2200000) return Response.json({ error: 'Use a photo under 2 MB.' }, { status: 413 });
   const form = await request.formData().catch(() => null);
@@ -25,5 +24,6 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Your photo could not be saved. Please try again.' }, { status: 503 });
   }
   if (profile.avatar_path) await bucket.remove([profile.avatar_path]);
-  return Response.json({ ok: true });
+  const { data: signed } = await bucket.createSignedUrl(path, 3600);
+  return Response.json({ ok: true, avatarUrl: signed?.signedUrl || null });
 }

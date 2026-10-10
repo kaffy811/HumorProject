@@ -8,3 +8,12 @@ export function namesFrom(value: unknown) {
   };
   return { first_name: clean(input?.firstName), last_name: clean(input?.lastName) };
 }
+
+export function profileFieldsFrom(value: unknown) {
+  const names = namesFrom(value);
+  const input = value as { username?: unknown };
+  if (typeof input.username !== 'string') throw new Error('Choose a username.');
+  const username = input.username.trim().toLowerCase();
+  if (!/^[a-z0-9_]{3,24}$/.test(username)) throw new Error('Use 3–24 letters, numbers or underscores for your username.');
+  return { ...names, username };
+}
