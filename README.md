@@ -1,37 +1,34 @@
 # Sidequest / HumorProject
 
-An independent campus humor website for the Week 4 Caption Rating assignment. Repository: kaffy811/HumorProject. Supabase: wqkpatxsbxwjsupojjcq (Humor Project). Uses Next.js 16, React, Supabase Auth/Postgres/Storage, and a two-call OpenAI prompt chain.
+An independent campus humor app: upload a photo, get four Google Gemini captions, and vote on the ones that land. Next.js 16 / React / Supabase Auth, Postgres and private Storage.
+
+Repository: kaffy811/HumorProject. Database: wqkpatxsbxwjsupojjcq. Vercel: humor-project8/humor-project. Never deploy to or modify Clearstock/hello-world.
 
 ## Run
+
 1. `npm ci`
-2. Copy `.env.example` to `.env.local` and configure this project's Supabase public key, server secret and OpenAI key.
-3. Apply `supabase/migrations/202610020001_humor.sql` once in this project's SQL Editor.
+2. Copy `.env.example` to `.env.local`; configure this project's Supabase public URL/key, server secret and Gemini key.
+3. Apply migrations in order on a fresh database. The existing Humor Project database already has both migrations; do not re-run them.
 4. `npm run dev`
 
-`npm run lint`, `npm test`, and `npm run build` verify the app. Build explicitly uses Webpack for portability in local restricted environments. Deploy repository root as a new Vercel project named humor-project. Never deploy it to hello-world.
+Checks: `npm test`, `npm run lint`, `npm run build`. Start a production server with `npm run start -- --hostname 127.0.0.1 --port 3006`, then run `node tests/public-http.mjs`. SQL rollback tests live in tests/rls.sql and tests/profiles-generations-rls.sql.
 
 ## Features
-- Email/password account creation and sign-in, confirmed email callback, sign-out. Optional Google OAuth.
-- Private member-only photo feed, own photos and unrated filters.
-- Rotating daily photo prompt, using America/New_York dates.
-- Preview and drag/drop JPEG/PNG/WebP uploads, up to 3 MB.
-- Image → visible-scene description → four funny captions. Atomic persistence before publication.
-- One immutable up/down vote per authenticated user per caption. Each vote is an INSERT, protected by database uniqueness and RLS.
-- Quiet illustrated homepage example, clearly marked as an illustration. It is not a fake database result or fake vote count.
 
-## Secrets and auth
-Only NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, and the optional NEXT_PUBLIC_GOOGLE_AUTH_ENABLED flag are client-visible. SUPABASE_SECRET_KEY (or legacy SUPABASE_SERVICE_ROLE_KEY) and OPENAI_API_KEY belong only on the server.
+- Email signup/sign-in plus Google OAuth when the owner enables it in Supabase. Exact app callback: /auth/callback.
+- Automatic nullable-name profile creation on new accounts; backfill for existing accounts. First login prompts for both names.
+- Protected /profile, /studio and /feed pages. A private profile photo can be uploaded and replaced.
+- JPEG/PNG/WebP upload preview, up to 3 MB; private member-only generated photo feed.
+- One structured Gemini image request generates the scene description and four captions. Prompts/configuration/model/image reference are saved before the provider call; atomic publication associates the real captions with their image and audit record.
+- One INSERT vote per authenticated user per caption, with uniqueness, ownership and RLS. Duplicate requests return the saved vote.
+- Newest, unrated and own-photo filters, daily weekday prompt, caption sharing and a Privacy page.
 
-In Supabase Auth URL Configuration set the new website's Site URL and add exact callback URLs for production, localhost and each commit URL you test. The app uses `/auth/callback`. For server-side email confirmation templates, `/auth/confirm?token_hash={{ .TokenHash }}&type=email` is supported.
+## Security and operations
 
-Google is optional and hidden by default. Enable Google in this Supabase project, configure the Google OAuth client's callback to `https://wqkpatxsbxwjsupojjcq.supabase.co/auth/v1/callback`, then set NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true. The account owner must provide OAuth credentials. Email sign-in works independently.
+All five public tables have RLS. Users cannot read others' profiles, avatars, vote histories or prompt records; only published photo/caption content is shared among members. Clients cannot write captions, change identity, rewrite generation logs or publish generations. Service credentials and GEMINI_API_KEY remain server-only. Images stay in private Storage; the database stores paths/text, not binary image data. A cancelled or failed provider call never becomes a fake successful generation.
 
-Supabase's default email service has delivery/rate restrictions. Configure custom SMTP for reliable external/grader signups; do not disable email confirmation as a workaround. Signup confirmation links should be opened on the originating browser for the default PKCE flow, or configure the token-hash template above.
+Reservations enforce one attempt/minute and ten/rolling 24 hours per user, 100/rolling 24 hours globally. AI_ENABLED=false pauses generation after redeploy. These caps do not replace provider-level budgets. Hard process termination can leave unpublished processing records; no automatic cleanup schedule is configured yet.
 
-## Security model
-All three public tables have RLS. No anonymous access to member photos, captions or votes. Users can see their own drafts and votes; published photos/captions are available to authenticated members. Clients cannot write image metadata, generate captions, edit votes or impersonate another user. Only the server secret can atomically publish a reservation and four captions. Storage allows only reserved paths under the uploading user's UUID. Objects remain private, accessed using one-hour signed URLs. Reload refreshes expired image links.
+## External configuration and acceptance
 
-Reservation serializes per-user requests using a database lock, with one attempt/minute and ten/day. Failed attempts count toward the limit. Provider timeouts and malformed output fail closed, mark the reservation failed and attempt orphan cleanup. Hard process termination can leave an unpublished private reservation/object; a scheduled cleanup job is a future operational improvement.
-
-## Project boundary
-This app does not use Clearstock code routes, its database, or its Vercel project. No changes to HelloWorld are required. The empty Java IDE scaffold is unrelated to the Vercel web runtime and is preserved outside this checkout.
+See [Google setup](docs/GOOGLE_SETUP.md), [product choices and real PM feedback checklist](docs/PRODUCT_AND_FEEDBACK.md) and [release record](docs/releases/2026-10-09-profiles-gemini.md). Configuring a real Gemini key and Google OAuth client requires the account owner. Do not call real AI generation or Google OAuth passed until those flows actually run.

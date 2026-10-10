@@ -8,6 +8,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(()=>null);
   if (!body || !/^[0-9a-f-]{36}$/i.test(body.captionId) || ![1,-1].includes(body.value)) return Response.json({error:"Invalid vote."},{status:400});
   const {error} = await db.from("humor_votes").insert({user_id:user.id,caption_id:body.captionId,value:body.value});
+  if(error?.code==="23505"){const {data:existing}=await db.from("humor_votes").select("value").eq("user_id",user.id).eq("caption_id",body.captionId).maybeSingle();return Response.json({error:"You already rated this caption.",vote:existing?.value},{status:409});}
   if(error) return Response.json({error:error.code==="23505"?"You already rated this caption.":"Unable to save vote."},{status:error.code==="23505"?409:400});
   return Response.json({ok:true});
 }

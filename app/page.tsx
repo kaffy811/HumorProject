@@ -1,9 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
+import { requireMember } from '@/lib/profile';
 import { Studio } from '@/components/studio';
 import { Feed, type Photo, type Rating } from '@/components/feed';
 export const dynamic='force-dynamic';
 const prompts=['The Sunday reset that never resets.','Monday has entered the group chat.','A library moment with villain energy.','Midweek: academically present, spiritually elsewhere.','Your weekend sidequest starts early.','A New York moment your hometown wouldn’t believe.','Main-character energy, student-budget edition.'];
-export default async function Home(){const db=await createClient();const {data:{user}}=await db.auth.getUser();const today=new Intl.DateTimeFormat('en-US',{weekday:'short',timeZone:'America/New_York'}).format(new Date());const theme=prompts[['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(today)];
+export default async function Home(){const db=await createClient();const {data:{user}}=await db.auth.getUser();if(user)await requireMember();const today=new Intl.DateTimeFormat('en-US',{weekday:'short',timeZone:'America/New_York'}).format(new Date());const theme=prompts[['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(today)];
  const {data:rows,error}=user?await db.from('humor_images').select('id,user_id,storage_path,description,created_at,humor_captions(id,content)').eq('status','ready').order('created_at',{ascending:false}).limit(24):{data:null,error:null};
  const {data:votes,error:voteError}=user?await db.from('humor_votes').select('caption_id,value').eq('user_id',user.id):{data:null,error:null};
  const photos:Photo[]=await Promise.all((rows||[]).map(async row=>{const {data}=await db.storage.from('humor-images').createSignedUrl(row.storage_path,3600);return {...row,url:data?.signedUrl||null};}));

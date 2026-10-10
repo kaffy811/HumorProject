@@ -7,7 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test": "node tests/humor-validation.mjs"
+    "test": "node tests/humor-validation.mjs && node tests/gemini-profile.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
