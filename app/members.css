@@ -458,7 +458,7 @@
 }
 .caption-option.is-selected {
   border-color: var(--color-tomato);
-  box-shadow: 2px 2px var(--color-tomato);
+  box-shadow: 2px 2px var(--color-ink);
 }
 .candidate-select {
   display: flex;

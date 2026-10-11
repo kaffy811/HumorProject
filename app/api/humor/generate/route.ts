@@ -82,9 +82,10 @@ export async function POST(request: Request) {
       },
     );
     if (reservation) {
+      if (reservation.message.includes("Generation busy")) throw new StudioError("A caption is already brewing. Wait for it to finish.", 409);
       if (reservation.message.includes("Generation limit"))
         throw new StudioError(
-          "Give it a minute between generations. Limit: 10 per day.",
+          "Today’s generation limit has been reached. Try again tomorrow.",
           429,
         );
       throw reservation;
