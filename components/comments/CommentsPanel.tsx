@@ -1,5 +1,5 @@
 "use client";
-import { useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import type { Post } from "@/lib/post-contracts";
 import type { Comment, CommentSort } from "@/lib/comment-contracts";
 import { useComments } from "@/hooks/useComments";
@@ -15,12 +15,37 @@ export function CommentsPanel({
   viewerId: string;
   input: RefObject<HTMLTextAreaElement | null>;
 }) {
+  const panel = useRef<HTMLElement>(null);
   const [sort, setSort] = useState<CommentSort>("top"),
     [reply, setReply] = useState<Comment | null>(null),
     comments = useComments(post, sort),
     { notify } = usePostFeedback();
+  useEffect(() => {
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      const element = panel.current;
+      if (!element || innerWidth < 1024) return;
+      // The back link puts the initial panel below its eventual sticky offset.
+      // Reserve that actual offset so the composer stays inside the viewport.
+      const top = Math.max(122, element.getBoundingClientRect().top);
+      element.style.setProperty("--comments-top", `${top}px`);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(measure);
+    };
+    measure();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+    };
+  }, []);
   return (
     <section
+      ref={panel}
       id="comments"
       className="comments-panel"
       aria-labelledby="comments-title"
