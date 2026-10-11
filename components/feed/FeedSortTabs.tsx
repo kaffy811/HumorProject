@@ -1,10 +1,9 @@
 "use client";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useStores } from "@/stores/StoreProvider";
 import type { PostSort } from "@/lib/post-contracts";
 export function FeedSortTabs({ sort }: { sort: PostSort }) {
-  const router = useRouter(),
-    q = useSearchParams(),
+  const q = useSearchParams(),
     { feed } = useStores();
   return (
     <div className="feed-sort" aria-label="Sort posts">
@@ -18,7 +17,7 @@ export function FeedSortTabs({ sort }: { sort: PostSort }) {
             feed.getState().remember(value, 0, feed.getState().pages[value]);
             const next = new URLSearchParams(q.toString());
             next.set("sort", value);
-            router.replace(`/feed?${next}`, { scroll: false });
+            window.history.replaceState(null, "", `/feed?${next}`);
           }}
         >
           {value === "hot" ? "Hot" : "New"}
