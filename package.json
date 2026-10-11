@@ -7,16 +7,18 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test": "node tests/humor-validation.mjs && node tests/gemini-profile.mjs && node tests/baby-auth.mjs && node tests/create-flow.mjs"
+    "test": "node tests/humor-validation.mjs && node tests/gemini-profile.mjs && node tests/baby-auth.mjs && node tests/create-flow.mjs && node tests/feed.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.116.0",
     "framer-motion": "^14.1.0",
-    "next": "16.3.5",
+    "html-to-image": "^1.11.13",
+    "next": "16.3.8",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "sharp": "^0.35.5",
+    "swr": "^2.5.1",
     "zustand": "^5.0.15"
   },
   "devDependencies": {
@@ -25,7 +27,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.3.5",
+    "eslint-config-next": "16.3.8",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

@@ -17,7 +17,7 @@ export function CaptionCandidates({
   const selected = selectedCaption(state);
   const all = [
     ...(state.retainedCandidate ? [state.retainedCandidate] : []),
-    ...state.candidates.filter(c => c.id !== state.retainedCandidate?.id),
+    ...state.candidates.filter((c) => c.id !== state.retainedCandidate?.id),
   ];
   return (
     <>
@@ -71,6 +71,8 @@ export function CaptionCandidates({
         <aside className="post-preview" aria-label="Final post preview">
           <span className="comic-label">The final cut</span>
           <PostCard
+            preview
+            style={state.style}
             imageUrl={state.image!.previewUrl}
             caption={selected?.text || ""}
             author={author}

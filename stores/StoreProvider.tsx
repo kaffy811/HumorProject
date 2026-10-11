@@ -3,12 +3,15 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { useStore } from "zustand";
 import { createMascotStore, type MascotStore } from "./mascot-store";
 import { createCreateStore, type CreateStore } from "./create-store";
+import { createFeedStore } from "./feed-store";
 const StoresContext = createContext<{
+  feed: ReturnType<typeof createFeedStore>;
   mascot: ReturnType<typeof createMascotStore>;
   create: ReturnType<typeof createCreateStore>;
 } | null>(null);
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [stores] = useState(() => ({
+    feed: createFeedStore(),
     mascot: createMascotStore(),
     create: createCreateStore(),
   }));

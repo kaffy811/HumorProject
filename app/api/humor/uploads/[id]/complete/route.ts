@@ -52,6 +52,18 @@ export async function POST(
     const metadata = await processor.metadata();
     if (!metadata.width || !metadata.height)
       throw new StudioError("The image could not be opened. Choose another.");
+    const swapped = (metadata.orientation || 0) >= 5;
+    const { error: dimensionsError } = await admin
+      .from("humor_images")
+      .update({
+        image_width: swapped ? metadata.height : metadata.width,
+        image_height: swapped
+          ? metadata.width
+          : metadata.pageHeight || metadata.height,
+      })
+      .eq("id", id)
+      .eq("user_id", user.id);
+    if (dimensionsError) throw dimensionsError;
     // Validate actual decoding; GIF is sent to Gemini as its first-frame PNG.
     const normalized = await processor
       .rotate()

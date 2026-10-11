@@ -7,7 +7,7 @@ export default async function MemberLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { db, profile } = await requireMember(false);
+  const { db, profile, user } = await requireMember(false);
   const { data } = profile?.avatar_path
     ? await db.storage
         .from("humor-avatars")
@@ -30,7 +30,9 @@ export default async function MemberLayout({
           href={`/baby/bust/${mood}.png`}
         />
       ))}
-      <AppShell author={author}>{children}</AppShell>
+      <AppShell author={author} viewerId={user.id}>
+        {children}
+      </AppShell>
     </>
   );
 }
