@@ -1816,3 +1816,6 @@
  .my-standing-inner .comic-button { padding:10px 12px;font-size:13px; }
  .leaderboard-podium .post-author strong { max-width:none; }
 }
+/* Keep padding outside the clamped text, so a fifth line cannot paint into it. */
+.member-shell .post-card.is-leaderboard .post-caption { padding:0; }
+.post-card.is-leaderboard .post-caption-link { padding:18px 16px; }
