@@ -19,7 +19,7 @@ type Props =
     }
   | {
       preview?: false;
-      variant?: "feed" | "detail";
+      variant?: "feed" | "detail" | "leaderboard";
       onComment?: () => void;
       onOpen?: () => void;
       post: Post;
@@ -84,7 +84,7 @@ export function PostCard(props: Props) {
   return (
     <div
       ref={card}
-      className={`comic-card post-card ${preview ? "is-preview" : ""} ${detail ? "is-detail" : ""}`}
+      className={`comic-card post-card ${preview ? "is-preview" : ""} ${detail ? "is-detail" : ""} ${!preview && props.variant === "leaderboard" ? "is-leaderboard" : ""}`}
     >
       <div className="post-head">
         <div className="post-author">

@@ -3,6 +3,10 @@ import { useCallback } from "react";
 import { useSWRConfig } from "swr";
 import { useFeedViewer } from "@/components/feed/FeedCacheProvider";
 import { patchPostPages } from "@/lib/post-cache";
+import {
+  patchLeaderboard,
+  type LeaderboardData,
+} from "@/lib/leaderboard-contracts";
 import type { Post, PostPage } from "@/lib/post-contracts";
 export function usePostCache() {
   const { cache, mutate } = useSWRConfig(),
@@ -18,6 +22,15 @@ export function usePostCache() {
             return;
           }
           if (!Array.isArray(parsed) || parsed[1] !== viewer) return;
+          if (parsed[0] === "leaderboard") {
+            await mutate<LeaderboardData>(
+              key,
+              (value) =>
+                value ? patchLeaderboard(value, post, change, viewer) : value,
+              { revalidate: false },
+            );
+            if (change === null) void mutate(key);
+          }
           if (parsed[0] === "post" && parsed[2] === post.id) {
             await mutate<Post | null>(
               key,
