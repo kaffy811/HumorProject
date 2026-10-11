@@ -120,7 +120,7 @@ export function BabyLanding({ googleEnabled, callbackError }: { googleEnabled: b
             animate={!reduce && state.hover && state.login === 'none' ? { rotate: [0, -1, 1, -0.7, 0.7, 0] } : { rotate: 0 }} transition={{ duration: 0.45 }}>
             <GoogleMark /><span>{state.login !== 'none' ? 'Making an entrance…' : 'Continue with Google'}</span><span className="baby-cta-arrow" aria-hidden="true">↗</span>
           </motion.button>
-          <div className="baby-verified"><span aria-hidden="true">✓</span> Verified by Google <span className="baby-verified-dot">·</span> Members only</div>
+          <div className="baby-verified"><span aria-hidden="true">✓</span> Verified by Google</div>
           <p className="baby-small-print">One click. No passwords. I can’t read them anyway.</p>
           <p className="baby-login-message" role="status" aria-live="polite">{message}</p>
         </div>
@@ -143,7 +143,7 @@ export function BabyLanding({ googleEnabled, callbackError }: { googleEnabled: b
           </motion.div>
         </motion.div>
         <div className="baby-floor-shadow" aria-hidden="true" />
-        <div className="baby-poke"><span className="baby-poke-arrow" aria-hidden="true">↖</span> 👆 Poke the baby<span className="baby-poke-note">he has opinions about that, too.</span></div>
+        <div className="baby-poke"><span className="baby-poke-arrow" aria-hidden="true">↙</span> 👆 Poke the baby<span className="baby-poke-note">he has opinions about that, too.</span></div>
         {!reduce && <button className="baby-gyro" onClick={() => void enableTilt()} aria-pressed={gyro}>{gyro ? 'Turn phone tilt off' : 'Tilt with your phone ↗'}</button>}
         {sensorMessage && <p className="baby-sensor-message" role="status">{sensorMessage}</p>}
       </section>
