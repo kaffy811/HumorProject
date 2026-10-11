@@ -1,4 +1,5 @@
 import { postsContext, fetchPostPage } from "@/lib/posts-server";
+import type { PostSort } from "@/lib/post-contracts";
 import { mockList } from "@/lib/mock-posts";
 import { studioFailure, StudioError } from "@/lib/studio-server";
 export const maxDuration = 60;
@@ -9,7 +10,7 @@ export async function GET(request: Request) {
       sort = q.get("sort") || "hot",
       limit = Number(q.get("limit") || 12);
     if (
-      !["hot", "new"].includes(sort) ||
+      !["hot", "new", "mine", "saved"].includes(sort) ||
       !Number.isInteger(limit) ||
       limit < 1 ||
       limit > 12
@@ -17,10 +18,10 @@ export async function GET(request: Request) {
       throw new StudioError("Invalid feed request.");
     return Response.json(
       ctx.mock
-        ? mockList(ctx.user.id, sort as "hot" | "new", q.get("cursor"), limit)
+        ? mockList(ctx.user.id, sort as PostSort, q.get("cursor"), limit)
         : await fetchPostPage(
             ctx,
-            sort as "hot" | "new",
+            sort as PostSort,
             q.get("cursor"),
             limit,
           ),

@@ -1,5 +1,5 @@
 "use client";
-import { FeedCacheProvider } from "@/components/feed/FeedCacheProvider";
+import { FeedCacheProvider, PostFeedback } from "@/components/feed/FeedCacheProvider";
 import { StoreProvider } from "@/stores/StoreProvider";
 import { GlobalHeader } from "./GlobalHeader";
 import { MobileNavigation } from "./MobileNavigation";
@@ -25,6 +25,7 @@ export function AppShell({
             {children}
           </main>
           <MobileNavigation />
+          <PostFeedback />
         </div>
       </FeedCacheProvider>
     </StoreProvider>

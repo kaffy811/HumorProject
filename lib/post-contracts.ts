@@ -11,8 +11,9 @@ export interface Post {
   haCount: number;
   commentCount: number;
   viewerHasHa: boolean;
+  viewerHasSaved: boolean;
 }
-export type PostSort = "hot" | "new";
+export type PostSort = "hot" | "new" | "mine" | "saved";
 export interface PostPage {
   posts: Post[];
   nextCursor: string | null;

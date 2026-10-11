@@ -1,0 +1,40 @@
+rollback;
+begin;
+do $$
+declare owner uuid; other_user uuid:=gen_random_uuid(); photo uuid; post uuid; request_id uuid:=gen_random_uuid(); page jsonb; outcome jsonb;
+begin
+ select id into owner from public.profiles limit 1;
+ insert into auth.users(id,email,raw_app_meta_data,raw_user_meta_data) values(other_user,other_user::text||'@example.invalid','{"provider":"google","providers":["google"]}','{}');
+ insert into public.humor_images(user_id,status,image_width,image_height) values(owner,'ready',600,800) returning id into photo;
+ update public.humor_images set storage_path=owner::text||'/'||photo::text||'.png' where id=photo;
+ insert into public.humor_captions(image_id,content) values(photo,'Saved rollback fixture') returning id into post;
+ outcome:=public.toggle_humor_save(post,owner,request_id);
+ if (outcome->>'viewerHasSaved')::boolean is not true then raise exception 'Save failed'; end if;
+ outcome:=public.toggle_humor_save(post,owner,request_id);
+ if (outcome->>'viewerHasSaved')::boolean is not true or (select count(*) from public.humor_saves s where s.user_id=owner and s.caption_id=post)<>1 then raise exception 'Retry toggled twice'; end if;
+ page:=public.humor_feed_page(owner,'saved',null,0,12);
+ if not exists(select 1 from jsonb_array_elements(page->'posts') p where p->>'id'=post::text and (p->>'viewerHasSaved')::boolean) then raise exception 'Saved page missing post'; end if;
+ if jsonb_array_length(public.humor_feed_page(other_user,'saved',null,0,12)->'posts')<>0 then raise exception 'Other user sees saves'; end if;
+ if exists(select 1 from jsonb_array_elements(public.humor_feed_page(other_user,'mine',null,0,12)->'posts') p where p->>'authorId'<>other_user::text) then raise exception 'My posts includes another author'; end if;
+ outcome:=public.toggle_humor_save(post,owner,gen_random_uuid());
+ if (outcome->>'viewerHasSaved')::boolean is not false then raise exception 'Unsave failed'; end if;
+ if exists(select 1 from jsonb_array_elements(public.humor_feed_page(owner,'saved',(page->>'snapshotId')::uuid,0,12)->'posts') p where p->>'id'=post::text) then raise exception 'Unsave remains in snapshot'; end if;
+ if not exists(select 1 from public.humor_captions c where c.id=post and c.deleted_at is null) then raise exception 'Unsave removed original post'; end if;
+ perform public.toggle_humor_save(post,owner,gen_random_uuid());
+ perform set_config('humor.test.post',post::text,true);
+ perform set_config('humor.test.owner',owner::text,true);
+ perform set_config('humor.test.other',other_user::text,true);
+ if has_function_privilege('authenticated','public.toggle_humor_save(uuid,uuid,uuid)','execute') or has_table_privilege('authenticated','public.humor_saves','insert') or has_table_privilege('anon','public.humor_saves','select') then raise exception 'Unsafe save privileges'; end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',owner,'role','authenticated','app_metadata',jsonb_build_object('providers',jsonb_build_array('google')),'amr',jsonb_build_array(jsonb_build_object('method','oauth','timestamp',1)))::text,true);
+end $$;
+set local role authenticated;
+do $$ begin
+ if (select count(*) from public.humor_saves where caption_id=current_setting('humor.test.post')::uuid)<>1 then raise exception 'Owner RLS denied own save'; end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',current_setting('humor.test.other'),'role','authenticated','app_metadata',jsonb_build_object('providers',jsonb_build_array('google')),'amr',jsonb_build_array(jsonb_build_object('method','oauth','timestamp',1)))::text,true);
+ if exists(select 1 from public.humor_saves where caption_id=current_setting('humor.test.post')::uuid) then raise exception 'RLS leaks another user save'; end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',current_setting('humor.test.owner'),'role','authenticated','app_metadata',jsonb_build_object('providers',jsonb_build_array('google')),'amr',jsonb_build_array(jsonb_build_object('method','password','timestamp',2)))::text,true);
+ if exists(select 1 from public.humor_saves where caption_id=current_setting('humor.test.post')::uuid) then raise exception 'Non-Google session reads saves'; end if;
+end $$;
+reset role;
+rollback;
+select 'PASS: save/unsave, idempotent retries, private Saved pages, snapshot filtering, preserved posts, ownership and Google-only RLS. All fixtures rolled back.' as result;

@@ -1,0 +1,11 @@
+# Private saves and a quieter landing host
+
+PostCard actions now sit at the image's bottom-right: 44px Ha, comments and bookmark controls, 12px insets and 10px gaps. Counts have opaque paper labels. Share lives in the header beside the options menu, and relative time and style sit beneath the author's name. Creator previews hide every action and menu. Very wide images reserve a minimum 208px frame so all three controls stay visible; ordinary images keep the existing ratio and portrait crop limit.
+
+Private bookmarks use `humor_saves`, with a per-user key, Google-only ownership RLS and server-only mutations. Request IDs prevent repeated toggles on retries. `/me` offers My posts and Saved with the same PostCard, cached pagination and scroll restoration. Optimistic changes update all cached orderings; a failed unsave restores the card even after it has unmounted, and the message remains visible in the shared layout. Unsave leaves the original post intact.
+
+The landing host defaults to a new reference-based `wave.png`, a greeting and gentle breathing. Pokes independently cycle ten poses and twelve original jokes, fade the bubble and squash once. Eight seconds after the last poke, the greeting returns. Pointer, proximity, hover, exit, random idle and gyroscope handlers were removed. The existing angel/heart Google transition remains. THE SMALL TALK ribbon is above navigation; the footer retains its fine print. At 1366×768, the headline and Google button fit on the first screen. The five ribbon jokes and twelve poke jokes are distinct. Reduced-motion and keyboard behavior remain supported.
+
+Validation: unit checks, lint, TypeScript and production build passed. Rolled-back database checks verified save/unsave, retry idempotence, private Saved lists, snapshot filtering, retained originals and Google-only RLS. Browser checks covered cached Saved insertion, unsave, failed-request restoration, cross-list Ha state, comment navigation, header sharing and rendered PNG contents. Mobile geometry confirmed 44×44 controls, 12px insets, 10px gaps, 16px card margins and no nested links.
+
+Migration: `supabase/migrations/202610110004_saved_posts.sql`, applied to the existing designated Humor Project database. Asset generation mode and exact prompt: `docs/wave-asset.md`.

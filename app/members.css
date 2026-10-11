@@ -1053,38 +1053,6 @@
   place-items: center;
   font: 12px var(--font-label);
 }
-.post-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 10px;
-  gap: 4px;
-}
-.post-actions :is(button, a, summary) {
-  min-height: 44px;
-  min-width: 44px;
-  padding: 10px 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: transparent;
-  border: 0;
-  color: var(--color-ink);
-  font-weight: 700;
-  font-size: 12px;
-  cursor: pointer;
-}
-.post-actions .post-ha {
-  border: 2px solid var(--color-ink);
-  padding: 8px 12px;
-}
-.post-actions .post-ha.is-liked {
-  background: var(--color-tomato);
-}
-.post-actions .post-ha:disabled {
-  opacity: 0.65;
-}
 .post-share,
 .post-options {
   position: relative;
@@ -1239,3 +1207,25 @@
   align-items: center;
   gap: 12px;
 }
+
+/* Image controls share one fixed size on every screen. */
+.post-image-frame { border-bottom: 0; }
+.post-card:not(.is-preview) .post-image-frame { min-height: 208px; }
+.post-image-link { position: absolute; inset: 0; }
+.post-image-actions { position: absolute; right: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 10px; z-index: 2; }
+.post-action-group { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.member-shell .post-overlay-button { width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; display: grid; place-items: center; background: var(--color-paper); color: var(--color-ink); border: 2px solid var(--color-ink); box-shadow: 2px 2px 0 var(--color-ink); font: 800 16px var(--font-body); cursor: pointer; }
+.member-shell .post-overlay-button.is-active { background: var(--color-tomato); }
+.member-shell .post-overlay-button:active { box-shadow: 0 0 0 var(--color-ink); }
+.member-shell .post-overlay-button:disabled { cursor: wait; }
+.post-action-count { display: block; min-width: 24px; padding: 1px 5px; background: var(--color-paper); color: var(--color-ink); font: 10px/12px var(--font-label); text-align: center; }
+.post-meta { display: flex; align-items: center; flex-wrap: wrap; column-gap: 5px; font: 10px/1.4 var(--font-label); }
+.post-meta .post-style { max-width: none; font-size: 9px; }
+.post-share summary { display: grid; place-items: center; width: 44px; height: 44px; cursor: pointer; }
+.post-head { gap: 2px; }
+.post-feedback { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 40; width: min(440px, calc(100vw - 32px)); display: flex; align-items: center; border: 2px solid var(--color-ink); background: var(--color-paper); box-shadow: 3px 3px var(--color-ink); padding: 8px 8px 8px 14px; font: 12px/1.5 var(--font-body); }
+.post-feedback button { margin-left: auto; flex-shrink: 0; width: 44px; height: 44px; border: 0; background: transparent; font-size: 24px; }
+.personal-end { text-align: center; font: 12px/1.6 var(--font-label); padding: 24px 0; }
+@media (max-width: 767px) { .post-feedback { bottom: 86px; } }
+
+.post-meta time { margin-top: 0; }

@@ -85,7 +85,7 @@ function Stream({ sort }: { sort: PostSort }) {
               <PostCard
                 post={post}
                 viewerId={viewerId}
-                onUpdate={(change) => feed.patch(post.id, change)}
+                onUpdate={(change) => feed.patch(post, change)}
               />
             </div>
           ))}

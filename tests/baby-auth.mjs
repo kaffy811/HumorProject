@@ -20,22 +20,24 @@ for (const field of Object.keys(complete)) assert.equal(profileComplete({...comp
 const { profileFieldsFrom } = load('lib/profile-validation.ts');
 assert.deepEqual(profileFieldsFrom({firstName:'Sam',lastName:'Jones',username:' SAM_J '}),{first_name:'Sam',last_name:'Jones',username:'sam_j'});
 for (const username of ['', 'ab', 'a'.repeat(25), 'sam j', 'sam/j', '<script>', '你好']) assert.throws(()=>profileFieldsFrom({firstName:'Sam',lastName:'Jones',username}));
-const { babyReducer: act, babyView: view, initialBaby: start, tiltFromPoint, BUBBLE_LINES, TICKER_JOKES } = load('lib/baby-machine.ts');
-assert.equal(BUBBLE_LINES.length,8); assert.equal(TICKER_JOKES.length,5);
-assert.equal(view(start).pose,'smirk');
-let s=act(start,{type:'pointer',near:true,leaving:false});assert.equal(view(s).pose,'flirt');assert.equal(view(s).line,'Go on. You know you want to.');
-s=act(s,{type:'hover',value:true});assert.equal(view(s).pose,'giggle');
-s=act(s,{type:'pointer',near:false,leaving:true});assert.equal(view(s).pose,'cry');
-s=act(s,{type:'hover',value:false});assert.equal(view(s).pose,'cry');
-s=act(s,{type:'sleep'});assert.equal(view(s).pose,'sleepy');
-s=act(s,{type:'wake'});assert.equal(view(s).pose,'smirk');
-s=start;
-for (const [index,pose] of ['huh','gasp','pout','huh','smug'].entries()) {s=act(s,{type:'poke',now:100+index*250});assert.equal(view(s).pose,pose);}
-assert.equal(view(s).line,'Are you done?');
-s=act(s,{type:'tick',now:6000});assert.equal(view(s).pose,'smirk');
-s=act(s,{type:'poke',now:8000});assert.equal(view(s).pose,'pout'); // old rapid-click window expires
-s=act(start,{type:'wink',now:100});assert.equal(view(s).pose,'wink');assert.equal(view(act(s,{type:'pointer',near:true,leaving:false})).pose,'flirt');s=act(s,{type:'tick',now:751});assert.equal(view(s).pose,'smirk');
-s=act(s,{type:'login'});assert.equal(view(s).pose,'angel');assert.equal(act(s,{type:'sleep'}),s);
-s=act(s,{type:'heart'});assert.equal(view(s).pose,'heart');s=act(s,{type:'cancel'});assert.equal(view(s).pose,'smirk');
-assert.deepEqual(tiltFromPoint(0,0,100,100),{x:8,y:-8});assert.deepEqual(tiltFromPoint(1000,1000,100,100),{x:-8,y:8});
-console.log('PASS Google-only verified sessions, incomplete-profile gating, username validation, all baby state transitions, event priorities, rapid-poke window and tilt bounds');
+const { babyReducer: act, babyView: view, initialBaby: start, POKE_POSES, BUBBLE_LINES, TICKER_JOKES, GREETING } = load('lib/baby-machine.ts');
+assert.equal(BUBBLE_LINES.length,12); assert.equal(TICKER_JOKES.length,5);
+assert.equal(new Set(BUBBLE_LINES).size,12);
+assert.equal(BUBBLE_LINES.some(line => TICKER_JOKES.includes(line)),false);
+assert.deepEqual(view(start),{pose:'wave',line:GREETING});
+let s=start,last=view(s);
+for(let i=0;i<36;i++) {
+ s=act(s,{type:'poke',now:1000+i*250});
+ const current=view(s);
+ assert.equal(current.pose,POKE_POSES[i%POKE_POSES.length]);
+ assert.equal(current.line,BUBBLE_LINES[i%12]);
+ assert.notEqual(current.pose,last.pose);assert.notEqual(current.line,last.line);last=current;
+}
+assert.equal(view(act(s,{type:'tick',now:s.until-1})).pose,s.temporary);
+s=act(s,{type:'tick',now:s.until});assert.deepEqual(view(s),view(start));
+s=act(s,{type:'poke',now:20000});const deadline=s.until;
+s=act(s,{type:'poke',now:21000});assert.equal(s.until,29000);
+assert.notEqual(view(act(s,{type:'tick',now:deadline})).pose,'wave');
+s=act(s,{type:'login'});assert.equal(view(s).pose,'angel');assert.equal(act(s,{type:'poke',now:30000}),s);
+s=act(s,{type:'heart'});assert.equal(view(s).pose,'heart');s=act(s,{type:'cancel'});assert.deepEqual(view(s),view(start));
+console.log('Google session, Profile, independent poke cycles, eight-second reset and login transition passed.');

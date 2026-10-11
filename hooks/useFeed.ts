@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import useSWRInfinite from "swr/infinite";
 import { useSWRConfig } from "swr";
 import { listPosts, checkPosts, PostError } from "@/lib/posts";
+import { patchPostPages } from "@/lib/post-cache";
 import type { Post, PostPage, PostSort } from "@/lib/post-contracts";
 import { useFeedViewer } from "@/components/feed/FeedCacheProvider";
 import { useStores } from "@/stores/StoreProvider";
@@ -46,7 +47,7 @@ export function useFeed(sort: PostSort) {
     };
   }, [feed, sort, swr.size]);
   useEffect(() => {
-    if (!cutoff) return;
+    if (!cutoff || (sort !== "hot" && sort !== "new")) return;
     let alive = true;
     const timer = setInterval(async () => {
       if (document.visibilityState !== "visible") return;
@@ -65,15 +66,9 @@ export function useFeed(sort: PostSort) {
       alive = false;
       clearInterval(timer);
     };
-  }, [cutoff]);
+  }, [cutoff, sort]);
   const patch = useCallback(
-    async (id: string, change: Partial<Post> | null) => {
-      const mapPage = (p: PostPage): PostPage => ({
-        ...p,
-        posts: p.posts.flatMap((post) =>
-          post.id === id ? (change ? [{ ...post, ...change }] : []) : [post],
-        ),
-      });
+    async (post: Post, change: Partial<Post> | null) => {
       const keys = Array.from(cache.keys()).filter(
         (key) =>
           key.includes('"posts"') && key.includes(JSON.stringify(viewer)),
@@ -82,12 +77,20 @@ export function useFeed(sort: PostSort) {
         keys.map((key) =>
           allMutate(
             key,
-            (value: PostPage | PostPage[] | undefined) =>
-              !value
-                ? value
-                : Array.isArray(value)
-                  ? value.map(mapPage)
-                  : mapPage(value),
+            (value: PostPage | PostPage[] | undefined) => {
+              if (!value) return value;
+              const parsed = JSON.parse(
+                key.startsWith("$inf$") ? key.slice(5) : key,
+              );
+              const updated = patchPostPages(
+                Array.isArray(value) ? value : [value],
+                post,
+                change,
+                parsed[2] === "saved",
+                parsed[3] === 0,
+              );
+              return Array.isArray(value) ? updated : updated[0];
+            },
             { revalidate: false },
           ),
         ),

@@ -1,102 +1,96 @@
 "use client";
 import Link from "next/link";
-import { useState, useRef, useEffect } from "react";
+import { useRef, useState } from "react";
 import { motion, useAnimationControls, useReducedMotion } from "framer-motion";
 import type { Post } from "@/lib/post-contracts";
-import { toggleHa } from "@/lib/posts";
-import { downloadPost } from "./PostExport";
+import { toggleHa, toggleSave, PostError } from "@/lib/posts";
+import { usePostFeedback } from "@/components/feed/FeedCacheProvider";
 export function PostActions({
   post,
   onUpdate,
-  card,
 }: {
   post: Post;
   onUpdate: (change: Partial<Post> | null) => Promise<void>;
-  card: React.RefObject<HTMLDivElement | null>;
 }) {
-  const [busy, setBusy] = useState(false),
-    [exporting, setExporting] = useState(false),
-    [message, setMessage] = useState(""),
-    menu = useRef<HTMLDetailsElement>(null),
-    controls = useAnimationControls(),
-    reduced = useReducedMotion();
-  useEffect(() => {
-    const close = (e: PointerEvent) => {
-      if (!menu.current?.contains(e.target as Node) && menu.current)
-        menu.current.open = false;
-    };
-    document.addEventListener("pointerdown", close);
-    return () => document.removeEventListener("pointerdown", close);
-  }, []);
-  async function ha() {
-    if (busy) return;
+  const [busyHa, setBusyHa] = useState(false),
+    [busySave, setBusySave] = useState(false),
+    lockHa = useRef(false),
+    lockSave = useRef(false),
+    haControls = useAnimationControls(),
+    saveControls = useAnimationControls(),
+    reduced = useReducedMotion(),
+    { notify } = usePostFeedback();
+  async function toggle(kind: "ha" | "save") {
+    const lock = kind === "ha" ? lockHa : lockSave;
+    if (lock.current) return;
+    lock.current = true;
+    const setBusy = kind === "ha" ? setBusyHa : setBusySave;
     setBusy(true);
-    setMessage("");
-    const previous = { haCount: post.haCount, viewerHasHa: post.viewerHasHa };
+    const previous =
+      kind === "ha"
+        ? { haCount: post.haCount, viewerHasHa: post.viewerHasHa }
+        : { viewerHasSaved: post.viewerHasSaved };
     if (!reduced)
-      void controls.start({
+      void (kind === "ha" ? haControls : saveControls).start({
         scaleY: [1, 0.9, 1],
         transition: { duration: 0.28 },
       });
-    await onUpdate({
-      viewerHasHa: !post.viewerHasHa,
-      haCount: post.haCount + (post.viewerHasHa ? -1 : 1),
-    });
     try {
-      await onUpdate(await toggleHa(post.id));
+      await onUpdate(
+        kind === "ha"
+          ? {
+              viewerHasHa: !post.viewerHasHa,
+              haCount: Math.max(0, post.haCount + (post.viewerHasHa ? -1 : 1)),
+            }
+          : { viewerHasSaved: !post.viewerHasSaved },
+      );
+      await onUpdate(
+        await (kind === "ha" ? toggleHa(post.id) : toggleSave(post.id)),
+      );
     } catch (e) {
       await onUpdate(previous);
-      setMessage(
-        e instanceof Error ? e.message : "Could not save your Ha. Try again.",
+      notify(
+        e instanceof PostError
+          ? e.message
+          : kind === "ha"
+            ? "Your Ha didn’t stick. Try again."
+            : "The bookmark didn’t stick. Try again.",
       );
     } finally {
+      lock.current = false;
       setBusy(false);
     }
   }
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(`${location.origin}/post/${post.id}`);
-      setMessage("Link copied. Go ruin a group chat.");
-      if (menu.current) menu.current.open = false;
-    } catch {
-      setMessage("Could not copy the link. Try again.");
-    }
-  }
-  async function download() {
-    if (exporting || !card.current) return;
-    setExporting(true);
-    setMessage("");
-    try {
-      await downloadPost(card.current, post.id);
-      if (menu.current) menu.current.open = false;
-      setMessage("Downloaded. Evidence secured.");
-    } catch {
-      setMessage("The image could not be downloaded. Try again.");
-    } finally {
-      setExporting(false);
-    }
-  }
   return (
-    <div data-post-controls>
-      <div className="post-actions">
+    <div
+      className="post-image-actions"
+      data-post-controls
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="post-action-group">
         <motion.button
-          className={`post-ha ${post.viewerHasHa ? "is-liked" : ""}`}
+          className={`post-overlay-button ${post.viewerHasHa ? "is-active" : ""}`}
+          aria-label="Ha"
           aria-pressed={post.viewerHasHa}
-          disabled={busy}
-          onClick={ha}
-          animate={controls}
+          disabled={busyHa}
+          onClick={() => void toggle("ha")}
+          animate={haControls}
         >
-          <span>Ha</span>
-          <span>{post.haCount}</span>
+          Ha
         </motion.button>
+        <span className="post-action-count" aria-label={`${post.haCount} Ha`}>
+          {post.haCount}
+        </span>
+      </div>
+      <div className="post-action-group">
         <Link
-          className="post-comment"
+          className="post-overlay-button"
           aria-label={`Comments, ${post.commentCount}`}
           href={`/post/${post.id}#comments`}
         >
           <svg
-            width="18"
-            height="18"
+            width="20"
+            height="20"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -105,45 +99,33 @@ export function PostActions({
           >
             <path d="M4 4h16v12H9l-5 4V4Z" />
           </svg>
-          <span>{post.commentCount}</span>
         </Link>
-        <details
-          ref={menu}
-          className="post-share"
-          onKeyDown={(e) => {
-            if (e.key === "Escape" && menu.current) {
-              menu.current.open = false;
-              menu.current.querySelector("summary")?.focus();
-            }
-          }}
-        >
-          <summary aria-label="Share post">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              aria-hidden="true"
-            >
-              <path d="M12 16V3m-5 5 5-5 5 5M5 12v9h14v-9" />
-            </svg>
-            <span>Share</span>
-          </summary>
-          <div className="post-popover">
-            <button onClick={copy}>Copy link</button>
-            <button disabled={exporting} onClick={download}>
-              {exporting ? "Rendering…" : "Download image"}
-            </button>
-          </div>
-        </details>
+        <span className="post-action-count" aria-hidden="true">
+          {post.commentCount}
+        </span>
       </div>
-      {message && (
-        <p className="post-message" role="status">
-          {message}
-        </p>
-      )}
+      <div className="post-action-group">
+        <motion.button
+          className={`post-overlay-button ${post.viewerHasSaved ? "is-active" : ""}`}
+          aria-label={post.viewerHasSaved ? "Unsave post" : "Save post"}
+          aria-pressed={post.viewerHasSaved}
+          disabled={busySave}
+          onClick={() => void toggle("save")}
+          animate={saveControls}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill={post.viewerHasSaved ? "currentColor" : "none"}
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+          >
+            <path d="M6 3h12v18l-6-4-6 4V3Z" />
+          </svg>
+        </motion.button>
+      </div>
     </div>
   );
 }

@@ -55,3 +55,11 @@ export function checkPosts(since: string) {
     `/api/posts/check?${new URLSearchParams({ since })}`,
   );
 }
+
+export function toggleSave(postId: string) {
+  return read<{ viewerHasSaved: boolean }>(`/api/posts/${postId}/save`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ requestKey: crypto.randomUUID() }),
+  });
+}

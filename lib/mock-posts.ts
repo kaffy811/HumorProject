@@ -17,6 +17,8 @@ const captions = [
 type Session = {
   posts: Post[];
   reports: Set<string>;
+  saves: Map<string, number>;
+  saveRequests: Map<string, { id: string; viewerHasSaved: boolean }>;
   cutoff: string;
   added?: boolean;
   requests: Map<string, { haCount: number; viewerHasHa: boolean }>;
@@ -39,6 +41,8 @@ function session(user: string) {
     s = {
       cutoff: new Date(now).toISOString(),
       reports: new Set(),
+      saves: new Map(),
+      saveRequests: new Map(),
       requests: new Map(),
       posts: Array.from({ length: 30 }, (_, i) => ({
         id: `mock-${i + 1}`,
@@ -58,6 +62,7 @@ function session(user: string) {
         haCount: 30 - i,
         commentCount: i % 7,
         viewerHasHa: false,
+        viewerHasSaved: false,
       })),
     };
     sessions.set(user, s);
@@ -82,11 +87,22 @@ export function mockList(
       throw new Error("Invalid mock cursor");
   } else {
     key = randomUUID();
-    const ordered = [...s.posts].sort((a, b) =>
-      sort === "hot"
-        ? hotScore(b.haCount, b.createdAt) - hotScore(a.haCount, a.createdAt)
-        : Date.parse(b.createdAt) - Date.parse(a.createdAt),
-    );
+    const ordered = s.posts
+      .filter((p) =>
+        sort === "saved"
+          ? p.viewerHasSaved
+          : sort === "mine"
+            ? p.author.id === user
+            : true,
+      )
+      .sort((a, b) =>
+        sort === "saved"
+          ? (s.saves.get(b.id) || 0) - (s.saves.get(a.id) || 0)
+          : sort === "hot"
+            ? hotScore(b.haCount, b.createdAt) -
+              hotScore(a.haCount, a.createdAt)
+            : Date.parse(b.createdAt) - Date.parse(a.createdAt),
+      );
     snapshots.set(key, {
       owner: user,
       sort,
@@ -101,7 +117,7 @@ export function mockList(
   return {
     posts: snapshot.ids.slice(offset, offset + limit).flatMap((id) => {
       const p = s.posts.find((post) => post.id === id);
-      return p ? [p] : [];
+      return p && (sort !== "saved" || p.viewerHasSaved) ? [{ ...p }] : [];
     }),
     nextCursor:
       offset + limit < snapshot.ids.length ? `${key}:${offset + limit}` : null,
@@ -112,7 +128,7 @@ export function mockList(
 export function mockAction(
   user: string,
   id: string,
-  kind: "ha" | "delete" | "report",
+  kind: "ha" | "save" | "delete" | "report",
   requestKey?: string,
 ) {
   const s = session(user),
@@ -125,6 +141,19 @@ export function mockAction(
     p.haCount += p.viewerHasHa ? 1 : -1;
     const result = { haCount: p.haCount, viewerHasHa: p.viewerHasHa };
     if (requestKey) s.requests.set(requestKey, result);
+    return result;
+  }
+  if (kind === "save") {
+    const previous = requestKey ? s.saveRequests.get(requestKey) : undefined;
+    if (previous) {
+      if (previous.id !== id) throw new Error("Invalid request");
+      return { viewerHasSaved: previous.viewerHasSaved };
+    }
+    p.viewerHasSaved = !p.viewerHasSaved;
+    if (p.viewerHasSaved) s.saves.set(id, Date.now());
+    else s.saves.delete(id);
+    const result = { viewerHasSaved: p.viewerHasSaved };
+    if (requestKey) s.saveRequests.set(requestKey, { id, ...result });
     return result;
   }
   if (kind === "delete") {
@@ -147,6 +176,7 @@ export function mockCheck(user: string, since: string) {
       createdAt: new Date().toISOString(),
       haCount: 40,
       viewerHasHa: false,
+      viewerHasSaved: false,
       author: { id: "mock-sam", name: "Sam", avatarUrl: null },
     });
   }

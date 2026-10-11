@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Author, JokeStyle } from "@/lib/create-contracts";
 import { imageRatio, relativeTime, type Post } from "@/lib/post-contracts";
 import { PostActions } from "./PostActions";
+import { PostShare } from "./PostShare";
 import { PostMenu } from "./PostMenu";
 type Props =
   | {
@@ -41,6 +42,7 @@ export function PostCard(props: Props) {
           haCount: 0,
           commentCount: 0,
           viewerHasHa: false,
+          viewerHasSaved: false,
         }
       : props.post;
   const card = useRef<HTMLDivElement>(null),
@@ -52,36 +54,29 @@ export function PostCard(props: Props) {
     const timer = setInterval(() => setClock(Date.now()), 60000);
     return () => clearInterval(timer);
   }, [preview]);
-  const caption = <p className="post-caption">{post.caption}</p>,
-    image = (
-      <div
-        className="post-image-frame"
-        style={{ aspectRatio: imageRatio(post.imageWidth, post.imageHeight) }}
-      >
-        {failed ? (
-          <span className="post-image-error">The photo stepped out.</span>
-        ) : (
-          <img
-            className="post-image"
-            src={post.imageUrl}
-            alt={post.caption}
-            width={post.imageWidth}
-            height={post.imageHeight}
-            loading={preview ? "eager" : "lazy"}
-            onError={() => setFailed(true)}
-            onLoad={(e) => {
-              if (preview) {
-                const img = e.currentTarget;
-                const frame = img.parentElement!;
-                frame.style.aspectRatio = String(
-                  imageRatio(img.naturalWidth, img.naturalHeight),
-                );
-              }
-            }}
-          />
-        )}
-      </div>
-    );
+  const caption = <p className="post-caption">{post.caption}</p>;
+  const image = failed ? (
+    <span className="post-image-error">The photo stepped out.</span>
+  ) : (
+    <img
+      className="post-image"
+      src={post.imageUrl}
+      alt={post.caption}
+      width={post.imageWidth}
+      height={post.imageHeight}
+      loading={preview ? "eager" : "lazy"}
+      onError={() => setFailed(true)}
+      onLoad={(e) => {
+        if (preview)
+          e.currentTarget.parentElement!.style.aspectRatio = String(
+            imageRatio(
+              e.currentTarget.naturalWidth,
+              e.currentTarget.naturalHeight,
+            ),
+          );
+      }}
+    />
+  );
   return (
     <div
       ref={card}
@@ -105,17 +100,23 @@ export function PostCard(props: Props) {
           )}
           <div>
             <strong>{post.author.name}</strong>
-            {!preview && (
-              <time
-                dateTime={post.createdAt}
-                title={new Date(post.createdAt).toLocaleString()}
-              >
-                {relativeTime(post.createdAt, clock)}
-              </time>
-            )}
+            <div className="post-meta">
+              {!preview && (
+                <>
+                  <time
+                    dateTime={post.createdAt}
+                    title={new Date(post.createdAt).toLocaleString()}
+                  >
+                    {relativeTime(post.createdAt, clock)}
+                  </time>
+                  <span aria-hidden="true">·</span>
+                </>
+              )}
+              <span className="post-style comic-label">{post.style}</span>
+            </div>
           </div>
         </div>
-        <span className="post-style comic-label">{post.style}</span>
+        {!preview && <PostShare id={post.id} card={card} />}
         {!preview && (
           <PostMenu
             post={post}
@@ -131,20 +132,23 @@ export function PostCard(props: Props) {
           {caption}
         </Link>
       )}
-      {preview ? (
-        image
-      ) : (
-        <Link
-          className="post-image-link"
-          href={`/post/${post.id}`}
-          aria-label={`View post: ${post.caption}`}
-        >
-          {image}
-        </Link>
-      )}
-      {!preview && (
-        <PostActions post={post} card={card} onUpdate={props.onUpdate} />
-      )}
+      <div
+        className="post-image-frame"
+        style={{ aspectRatio: imageRatio(post.imageWidth, post.imageHeight) }}
+      >
+        {preview ? (
+          image
+        ) : (
+          <Link
+            className="post-image-link"
+            href={`/post/${post.id}`}
+            aria-label={`View post: ${post.caption}`}
+          >
+            {image}
+          </Link>
+        )}
+        {!preview && <PostActions post={post} onUpdate={props.onUpdate} />}
+      </div>
     </div>
   );
 }

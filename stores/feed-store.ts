@@ -7,14 +7,14 @@ export function createFeedStore() {
     remember: (sort: PostSort, y: number, pages: number) => void;
     reset: () => void;
   }>((set) => ({
-    positions: { hot: 0, new: 0 },
-    pages: { hot: 1, new: 1 },
+    positions: { hot: 0, new: 0, mine: 0, saved: 0 },
+    pages: { hot: 1, new: 1, mine: 1, saved: 1 },
     remember: (sort, y, pages) =>
       set((s) => ({
         positions: { ...s.positions, [sort]: y },
         pages: { ...s.pages, [sort]: pages },
       })),
     reset: () =>
-      set({ positions: { hot: 0, new: 0 }, pages: { hot: 1, new: 1 } }),
+      set({ positions: { hot: 0, new: 0, mine: 0, saved: 0 }, pages: { hot: 1, new: 1, mine: 1, saved: 1 } }),
   }));
 }
