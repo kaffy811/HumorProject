@@ -8,8 +8,12 @@ import { usePostFeedback } from "@/components/feed/FeedCacheProvider";
 export function PostActions({
   post,
   onUpdate,
+  onComment,
+  onOpen,
 }: {
   post: Post;
+  onComment?: () => void;
+  onOpen?: () => void;
   onUpdate: (change: Partial<Post> | null) => Promise<void>;
 }) {
   const [busyHa, setBusyHa] = useState(false),
@@ -87,6 +91,12 @@ export function PostActions({
           className="post-overlay-button"
           aria-label={`Comments, ${post.commentCount}`}
           href={`/post/${post.id}#comments`}
+          onClick={(e) => {
+            if (onComment) {
+              e.preventDefault();
+              onComment();
+            } else onOpen?.();
+          }}
         >
           <svg
             width="20"

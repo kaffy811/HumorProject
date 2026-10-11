@@ -2,6 +2,13 @@
 import { createContext, useContext, useState, useCallback } from "react";
 import { SWRConfig } from "swr";
 const Viewer = createContext("");
+const ViewerAuthor = createContext<{ name: string; avatarUrl: string | null }>({
+  name: "You",
+  avatarUrl: null,
+});
+export function useViewerAuthor() {
+  return useContext(ViewerAuthor);
+}
 const Feedback = createContext<{
   message: string;
   notify: (message: string) => void;
@@ -26,9 +33,11 @@ export function useFeedViewer() {
 }
 export function FeedCacheProvider({
   viewerId,
+  author,
   children,
 }: {
   viewerId: string;
+  author?: { name: string; avatarUrl: string | null } | null;
   children: React.ReactNode;
 }) {
   const [cache] = useState(() => new Map());
@@ -37,19 +46,21 @@ export function FeedCacheProvider({
   const dismiss = useCallback(() => setMessage(""), []);
   return (
     <Viewer.Provider value={viewerId}>
-      <Feedback.Provider value={{ message, notify, dismiss }}>
-        <SWRConfig
-          value={{
-            provider: () => cache,
-            revalidateOnFocus: false,
-            revalidateOnReconnect: false,
-            revalidateIfStale: false,
-            errorRetryCount: 0,
-          }}
-        >
-          {children}
-        </SWRConfig>
-      </Feedback.Provider>
+      <ViewerAuthor.Provider value={author || { name: "You", avatarUrl: null }}>
+        <Feedback.Provider value={{ message, notify, dismiss }}>
+          <SWRConfig
+            value={{
+              provider: () => cache,
+              revalidateOnFocus: false,
+              revalidateOnReconnect: false,
+              revalidateIfStale: false,
+              errorRetryCount: 0,
+            }}
+          >
+            {children}
+          </SWRConfig>
+        </Feedback.Provider>
+      </ViewerAuthor.Provider>
     </Viewer.Provider>
   );
 }

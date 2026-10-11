@@ -160,6 +160,10 @@ export function mockAction(
     if (p.author.id !== user)
       throw new Error("Only the author can delete this post");
     s.posts = s.posts.filter((x) => x.id !== id);
+    s.saves.delete(id);
+    s.reports.delete(id);
+    for (const [key, value] of s.saveRequests)
+      if (value.id === id) s.saveRequests.delete(key);
   } else s.reports.add(id);
   return { ok: true };
 }
@@ -182,4 +186,11 @@ export function mockCheck(user: string, since: string) {
   }
   return s.posts.filter((p) => Date.parse(p.createdAt) > Date.parse(since))
     .length;
+}
+export function mockGet(user: string, id: string) {
+  return session(user).posts.find((p) => p.id === id) || null;
+}
+export function mockCommentCount(user: string, id: string, count: number) {
+  const p = mockGet(user, id);
+  if (p) p.commentCount = count;
 }

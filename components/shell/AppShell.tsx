@@ -1,5 +1,8 @@
 "use client";
-import { FeedCacheProvider, PostFeedback } from "@/components/feed/FeedCacheProvider";
+import {
+  FeedCacheProvider,
+  PostFeedback,
+} from "@/components/feed/FeedCacheProvider";
 import { StoreProvider } from "@/stores/StoreProvider";
 import { GlobalHeader } from "./GlobalHeader";
 import { MobileNavigation } from "./MobileNavigation";
@@ -9,13 +12,13 @@ export function AppShell({
   viewerId,
   children,
 }: {
-  author: Author;
+  author: Author | null;
   viewerId: string;
   children: React.ReactNode;
 }) {
   return (
     <StoreProvider key={viewerId}>
-      <FeedCacheProvider viewerId={viewerId}>
+      <FeedCacheProvider viewerId={viewerId} author={author}>
         <div className="member-shell">
           <a className="skip-link" href="#member-content">
             Skip to content
@@ -24,7 +27,7 @@ export function AppShell({
           <main id="member-content" className="member-content">
             {children}
           </main>
-          <MobileNavigation />
+          {author && <MobileNavigation />}
           <PostFeedback />
         </div>
       </FeedCacheProvider>

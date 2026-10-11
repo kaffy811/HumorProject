@@ -19,6 +19,9 @@ type Props =
     }
   | {
       preview?: false;
+      variant?: "feed" | "detail";
+      onComment?: () => void;
+      onOpen?: () => void;
       post: Post;
       viewerId: string;
       onUpdate: (change: Partial<Post> | null) => Promise<void>;
@@ -54,6 +57,7 @@ export function PostCard(props: Props) {
     const timer = setInterval(() => setClock(Date.now()), 60000);
     return () => clearInterval(timer);
   }, [preview]);
+  const detail = !preview && props.variant === "detail";
   const caption = <p className="post-caption">{post.caption}</p>;
   const image = failed ? (
     <span className="post-image-error">The photo stepped out.</span>
@@ -80,7 +84,7 @@ export function PostCard(props: Props) {
   return (
     <div
       ref={card}
-      className={`comic-card post-card ${preview ? "is-preview" : ""}`}
+      className={`comic-card post-card ${preview ? "is-preview" : ""} ${detail ? "is-detail" : ""}`}
     >
       <div className="post-head">
         <div className="post-author">
@@ -125,29 +129,48 @@ export function PostCard(props: Props) {
           />
         )}
       </div>
-      {preview ? (
+      {preview || detail ? (
         caption
       ) : (
-        <Link className="post-caption-link" href={`/post/${post.id}`}>
+        <Link
+          className="post-caption-link"
+          href={`/post/${post.id}`}
+          onClick={props.preview ? undefined : props.onOpen}
+        >
           {caption}
         </Link>
       )}
       <div
         className="post-image-frame"
-        style={{ aspectRatio: imageRatio(post.imageWidth, post.imageHeight) }}
+        style={{
+          aspectRatio: detail
+            ? post.imageWidth / post.imageHeight
+            : imageRatio(post.imageWidth, post.imageHeight),
+          ...(detail
+            ? { maxWidth: `${(70 * post.imageWidth) / post.imageHeight}vh` }
+            : {}),
+        }}
       >
-        {preview ? (
+        {preview || detail ? (
           image
         ) : (
           <Link
             className="post-image-link"
+            onClick={props.preview ? undefined : props.onOpen}
             href={`/post/${post.id}`}
             aria-label={`View post: ${post.caption}`}
           >
             {image}
           </Link>
         )}
-        {!preview && <PostActions post={post} onUpdate={props.onUpdate} />}
+        {!preview && (
+          <PostActions
+            post={post}
+            onUpdate={props.onUpdate}
+            onComment={props.onComment}
+            onOpen={props.onOpen}
+          />
+        )}
       </div>
     </div>
   );

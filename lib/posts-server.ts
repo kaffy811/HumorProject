@@ -33,7 +33,7 @@ export async function postsContext() {
   };
 }
 export type PostsContext = Awaited<ReturnType<typeof postsContext>>;
-export function parseCursor(value: string | null, sort: PostSort) {
+export function parseCursor(value: string | null, sort: PostSort | "top") {
   if (!value) return { snapshot_id: null, page_offset: 0 };
   try {
     const c = JSON.parse(Buffer.from(value, "base64url").toString());

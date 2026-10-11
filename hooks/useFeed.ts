@@ -3,15 +3,20 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import useSWRInfinite from "swr/infinite";
 import { useSWRConfig } from "swr";
 import { listPosts, checkPosts, PostError } from "@/lib/posts";
-import { patchPostPages } from "@/lib/post-cache";
-import type { Post, PostPage, PostSort } from "@/lib/post-contracts";
+import { usePostCache } from "./usePostCache";
+import type { PostPage, PostSort } from "@/lib/post-contracts";
 import { useFeedViewer } from "@/components/feed/FeedCacheProvider";
 import { useStores } from "@/stores/StoreProvider";
 export function useFeed(sort: PostSort) {
   const viewer = useFeedViewer(),
     { feed } = useStores(),
-    { mutate: allMutate, cache } = useSWRConfig();
-  const [initial] = useState(() => feed.getState().pages[sort]);
+    { mutate: allMutate } = useSWRConfig();
+  const [initial] = useState(() => {
+    const state = feed.getState();
+    return state.detailReturn?.sort === sort
+      ? state.detailReturn.pages
+      : state.pages[sort];
+  });
   const [newCount, setNewCount] = useState(0),
     [checkingError, setCheckingError] = useState("");
   const swr = useSWRInfinite<PostPage>(
@@ -67,37 +72,7 @@ export function useFeed(sort: PostSort) {
       clearInterval(timer);
     };
   }, [cutoff, sort]);
-  const patch = useCallback(
-    async (post: Post, change: Partial<Post> | null) => {
-      const keys = Array.from(cache.keys()).filter(
-        (key) =>
-          key.includes('"posts"') && key.includes(JSON.stringify(viewer)),
-      );
-      await Promise.all(
-        keys.map((key) =>
-          allMutate(
-            key,
-            (value: PostPage | PostPage[] | undefined) => {
-              if (!value) return value;
-              const parsed = JSON.parse(
-                key.startsWith("$inf$") ? key.slice(5) : key,
-              );
-              const updated = patchPostPages(
-                Array.isArray(value) ? value : [value],
-                post,
-                change,
-                parsed[2] === "saved",
-                parsed[3] === 0,
-              );
-              return Array.isArray(value) ? updated : updated[0];
-            },
-            { revalidate: false },
-          ),
-        ),
-      );
-    },
-    [allMutate, cache, viewer],
-  );
+  const patch = usePostCache();
   const { isValidating, size, error, setSize } = swr;
   const loadMore = useCallback(() => {
     if (!isValidating && size <= pages.length && last?.nextCursor && !error)

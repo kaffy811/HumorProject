@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useFeed } from "@/hooks/useFeed";
 import { useFeedScroll } from "@/hooks/useFeedScroll";
 import { useFeedViewer } from "./FeedCacheProvider";
+import { useStores } from "@/stores/StoreProvider";
 import { useMascot } from "@/stores/StoreProvider";
 import type { PostSort } from "@/lib/post-contracts";
 import { FeedSortTabs } from "./FeedSortTabs";
@@ -13,6 +14,7 @@ import { FeedStatus } from "./FeedStatus";
 import { NewPostsNotice } from "./NewPostsNotice";
 import { PostCard } from "@/components/posts/PostCard";
 function Stream({ sort }: { sort: PostSort }) {
+  const stores = useStores();
   const feed = useFeed(sort),
     viewerId = useFeedViewer(),
     setMood = useMascot((s) => s.setMood),
@@ -20,7 +22,7 @@ function Stream({ sort }: { sort: PostSort }) {
     pouted = useRef(false),
     [busy, setBusy] = useState(false),
     [refreshError, setRefreshError] = useState("");
-  useFeedScroll(sort, !!feed.pages.length);
+  useFeedScroll(sort, feed.pages.length >= feed.size);
   const { loadMore, ended, loadingMore, error } = feed;
   useEffect(() => {
     const node = sentinel.current;
@@ -84,6 +86,16 @@ function Stream({ sort }: { sort: PostSort }) {
             <div className="feed-masonry-item" key={post.id}>
               <PostCard
                 post={post}
+                onOpen={() =>
+                  stores.feed
+                    .getState()
+                    .markDetailEntry(
+                      `/feed?sort=${sort}`,
+                      window.scrollY,
+                      feed.size,
+                      sort,
+                    )
+                }
                 viewerId={viewerId}
                 onUpdate={(change) => feed.patch(post, change)}
               />

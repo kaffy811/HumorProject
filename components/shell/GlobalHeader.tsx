@@ -9,7 +9,7 @@ export const NAV_ITEMS = [
   { href: "/create", label: "Create" },
   { href: "/top", label: "Top" },
 ];
-export function GlobalHeader({ author }: { author: Author }) {
+export function GlobalHeader({ author }: { author: Author | null }) {
   const path = usePathname();
   return (
     <header className="comic-header">
@@ -29,19 +29,30 @@ export function GlobalHeader({ author }: { author: Author }) {
         </Link>
         <Mascot />
         <div className="header-actions">
-          <nav className="desktop-navigation" aria-label="Main navigation">
-            {NAV_ITEMS.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={path === item.href ? "is-active" : ""}
-                aria-current={path === item.href ? "page" : undefined}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-          <UserMenu author={author} />
+          {author && (
+            <nav className="desktop-navigation" aria-label="Main navigation">
+              {NAV_ITEMS.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={path === item.href ? "is-active" : ""}
+                  aria-current={path === item.href ? "page" : undefined}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          )}
+          {author ? (
+            <UserMenu author={author} />
+          ) : (
+            <Link
+              className="comic-button is-secondary guest-header-login"
+              href="/"
+            >
+              Sign in
+            </Link>
+          )}
         </div>
       </div>
     </header>

@@ -10,6 +10,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/", request.url));
   if (path === "/privacy" || path.startsWith("/auth/"))
     return NextResponse.next();
+  const publicPost = /^\/post\/[^/]+$/.test(path);
+  if (/^\/post\/[^/]+\/(thumbnail|opengraph-image)$/.test(path))
+    return NextResponse.next();
   let response = NextResponse.next({ request });
   const { url, key } = supabaseConfig();
   const db = createServerClient(url, key, {
@@ -37,7 +40,7 @@ export async function proxy(request: NextRequest) {
     result.headers.set("Cache-Control", "private, no-store");
     return result;
   };
-  if (!signedIn && path !== "/") {
+  if (!signedIn && path !== "/" && !publicPost) {
     if (path.startsWith("/api/")) {
       const result = NextResponse.json(
         { error: "Sign in with Google to continue." },

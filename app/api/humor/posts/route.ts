@@ -1,3 +1,4 @@
+import { ensureLockedThumbnail } from "@/lib/post-previews";
 import { characterCount, validUuid } from "@/lib/create-contracts";
 import {
   readJson,
@@ -44,6 +45,14 @@ export async function POST(request: Request) {
         postId: input.generationId,
         href: `/post/${input.generationId}`,
       });
+    const { data: draft, error: draftError } = await admin
+      .from("humor_drafts")
+      .select("image_path")
+      .eq("image_id", input.draftId)
+      .eq("user_id", user.id)
+      .single();
+    if (draftError) throw draftError;
+    await ensureLockedThumbnail(admin, input.draftId, draft.image_path);
     const { data: postId, error: published } = await admin.rpc(
       "publish_humor_draft",
       {
