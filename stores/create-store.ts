@@ -95,7 +95,7 @@ export function selectedCaption(s: CreateState) {
 }
 export function hasUnpublishedContent(s: CreateState) {
   return (
-    !!(s.candidates.length || s.retainedCandidate) && s.phase !== "published"
+    !!(s.candidates.length || s.retainedCandidate || s.phase === "generating" || s.phase === "generation-error") && s.phase !== "published"
   );
 }
 export function reduceCreate(s: CreateState, event: CreateEvent): CreateState {

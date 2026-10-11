@@ -10,7 +10,7 @@ let s=act(start,{type:'IMAGE_SELECTED',requestId:'upload2',image:{uploadId:null,
 assert.equal(act(s,{type:'UPLOAD_READY',requestId:'upload1',draftId:'old',uploadId:'old'}),s);
 s=act(s,{type:'UPLOAD_READY',requestId:'upload2',draftId:'draft',uploadId:'image'});assert.equal(s.step,2);
 s=act(s,{type:'SET_CONTEXT',text:'😀'.repeat(121)});assert.equal(contracts.characterCount(s.context),120);
-s=act(s,{type:'GENERATE_STARTED',requestId:'gen1'});assert.equal(s.phase,'generating');
+s=act(s,{type:'GENERATE_STARTED',requestId:'gen1'});assert.equal(s.phase,'generating');assert.ok(hasUnpublishedContent(s));
 const candidates=[0,1,2,3].map(i=>({id:'c'+i,generationId:'g1',text:'caption'+i,originalText:'caption'+i,source:'generated'}));
 s=act(s,{type:'GENERATE_SUCCEEDED',requestId:'gen1',candidates,mode:'live'});assert.equal(s.step,4);assert.ok(hasUnpublishedContent(s));
 s=act(s,{type:'SELECT_CAPTION',id:'c1'});s=act(s,{type:'EDIT_CAPTION',id:'c1',text:'My careful edit'});

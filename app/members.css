@@ -312,7 +312,7 @@
 .step-body {
   padding: 6px 18px 22px;
 }
-.upload-zone {
+.create-upload-zone {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -325,19 +325,19 @@
   background: transparent;
   min-height: 180px;
 }
-.upload-zone.is-dragging {
+.create-upload-zone.is-dragging {
   border-color: var(--color-tomato);
   background: #fffaf0;
 }
-.upload-zone strong {
+.create-upload-zone strong {
   font-size: 18px;
   letter-spacing: -0.5px;
 }
-.upload-zone span {
+.create-upload-zone span {
   font-size: 12px;
   line-height: 1.5;
 }
-.upload-icon {
+.create-upload-icon {
   width: 34px;
   height: 34px;
   margin-bottom: 8px;
@@ -807,10 +807,10 @@
   .account-dropdown {
     right: 0;
   }
-  .upload-zone {
+  .create-upload-zone {
     padding: 30px 10px;
   }
-  .upload-zone strong {
+  .create-upload-zone strong {
     font-size: 16px;
   }
   .candidate-actions .comic-button {
@@ -833,3 +833,5 @@
 
 .header-mascot.is-scrolled img { width:80px; height:80px; }
 @media (max-width:359px) { .comic-brand {font-size:11px;gap:6px} .comic-brand-symbol {width:24px;height:24px;font-size:20px} }
+
+.member-shell .header-mascot {background:var(--color-paper)}

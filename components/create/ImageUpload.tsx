@@ -98,7 +98,7 @@ export function ImageUpload({
         <button
           disabled={disabled}
           type="button"
-          className={`upload-zone ${dragging ? "is-dragging" : ""}`}
+          className={`create-upload-zone ${dragging ? "is-dragging" : ""}`}
           onClick={() => input.current?.click()}
           onDragOver={(e) => {
             e.preventDefault();
@@ -112,7 +112,7 @@ export function ImageUpload({
           }}
         >
           <svg
-            className="upload-icon"
+            className="create-upload-icon"
             viewBox="0 0 32 32"
             fill="none"
             stroke="currentColor"
