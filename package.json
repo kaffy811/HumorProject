@@ -7,7 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test": "node tests/humor-validation.mjs && node tests/gemini-profile.mjs && node tests/baby-auth.mjs"
+    "test": "node tests/humor-validation.mjs && node tests/gemini-profile.mjs && node tests/baby-auth.mjs && node tests/create-flow.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -15,7 +15,9 @@
     "framer-motion": "^14.1.0",
     "next": "16.3.5",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "sharp": "^0.35.5",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -19,14 +19,14 @@ export async function finishAuth(request: NextRequest, mode: 'code' | 'email') {
   const result = mode === 'code' && code ? await db.auth.exchangeCodeForSession(code)
     : null;
   if (!result || result.error) {
-    response.headers.set('Location', new URL('/login?error=callback', request.url).toString());
+    response.headers.set('Location', new URL('/?error=callback', request.url).toString());
     return response;
   }
   const { data: { user } } = await db.auth.getUser();
   const { data: verified, error: claimsError } = await db.auth.getClaims();
   if (claimsError || !isGoogleSession(user, verified?.claims)) {
     await db.auth.signOut();
-    response.headers.set('Location', new URL('/login?error=google', request.url).toString());
+    response.headers.set('Location', new URL('/?error=google', request.url).toString());
   }
   else {
     const { data: profile, error } = await db.from('profiles').select('first_name,last_name,username,avatar_path').eq('id', user!.id).maybeSingle();

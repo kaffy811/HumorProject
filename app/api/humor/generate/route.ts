@@ -1,58 +1,175 @@
-import { createHash } from 'node:crypto';
-import { memberAuth } from '@/lib/member-auth';
-import { createClient as adminClient } from '@supabase/supabase-js';
-import { config } from '@/lib/supabase/config';
-import { imageType, sameOrigin } from '@/lib/humor-validation';
-import { profileComplete } from '@/lib/profile';
-import { geminiSettings, generateCaptions, SYSTEM_PROMPT, USER_PROMPT, GENERATION_CONFIG } from '@/lib/gemini';
+import { randomUUID } from "node:crypto";
+import {
+  characterCount,
+  validStyle,
+  validUuid,
+  type CaptionCandidate,
+} from "@/lib/create-contracts";
+import {
+  readJson,
+  studioContext,
+  studioFailure,
+  StudioError,
+  mockEnabled,
+} from "@/lib/studio-server";
+import {
+  geminiSettings,
+  generateCaptions,
+  captionPrompt,
+  SYSTEM_PROMPT,
+  GENERATION_CONFIG,
+} from "@/lib/gemini";
 export const maxDuration = 120;
 export async function POST(request: Request) {
-  if (!sameOrigin(request)) return Response.json({ error: 'Invalid origin' }, { status: 403 });
-  const { db, user } = await memberAuth();
-  if (!user) return Response.json({ error: 'Sign in to upload.' }, { status: 401 });
-  const { data: profile, error: profileError } = await db.from('profiles').select('first_name,last_name,username,avatar_path').eq('id', user.id).maybeSingle();
-  if (profileError) return Response.json({ error: 'Unable to load your profile. Please try again.' }, { status: 503 });
-  if (!profileComplete(profile)) return Response.json({ error: 'Complete your username, name and photo in Profile before generating.' }, { status: 403 });
-  const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!secret || !process.env.GEMINI_API_KEY) return Response.json({ error: 'The caption studio is awaiting server configuration. Please try again later.' }, { status: 503 });
-  if (process.env.AI_ENABLED === 'false') return Response.json({ error: 'New captions are temporarily paused. You can still vote on existing jokes.' }, { status: 503 });
-  const { model } = geminiSettings();
-  if (Number(request.headers.get('content-length')) > 3200000) return Response.json({ error: 'Use an image under 3 MB.' }, { status: 413 });
-  const form = await request.formData().catch(() => null);
-  const file = form?.get('image');
-  if (!(file instanceof File) || !file.size || file.size > 3000000) return Response.json({ error: 'Choose a JPEG, PNG or WebP under 3 MB.' }, { status: 400 });
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  const mime = imageType(bytes);
-  if (!mime || mime !== file.type) return Response.json({ error: 'Unsupported image format.' }, { status: 400 });
-  const admin = adminClient(config().url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
-  const { data: id, error: reservation } = await db.rpc('reserve_humor_image');
-  if (reservation || !id) return Response.json({ error: 'Please wait a minute between uploads; limit 10 per day. The studio may also have reached its daily capacity.' }, { status: 429 });
-  const path = `${user.id}/${id}.${mime.split('/')[1]}`;
-  let stage = 'upload';
+  let generationId: string | undefined;
+  let admin: Awaited<ReturnType<typeof studioContext>>["admin"] | undefined;
   try {
-    const { error: upload } = await db.storage.from('humor-images').upload(path, bytes, { contentType: mime, upsert: false });
-    if (upload) throw upload;
-    stage = 'prompt record';
-    // Record exact text/config before a billable request; image bytes remain in Storage only.
-    const { error: audit } = await admin.from('humor_generations').insert({
-      image_id: id, user_id: user.id, provider: 'google', model,
-      system_prompt: SYSTEM_PROMPT, user_prompt: USER_PROMPT, generation_config: GENERATION_CONFIG,
-      image_path: path, image_mime: mime, image_sha256: createHash('sha256').update(bytes).digest('hex'),
-    });
-    if (audit) throw audit;
-    stage = 'Gemini';
-    const result = await generateCaptions(bytes, mime);
-    stage = 'publication';
-    const { error: saved } = await admin.rpc('complete_humor_image', {
-      image_id: id, owner: user.id, object_path: path, scene: result.description, lines: result.captions, usage: result.usage,
-    });
+    const ctx = await studioContext(request);
+    admin = ctx.admin;
+    const input = await readJson(request);
+    if (
+      !input ||
+      !validUuid(input.uploadId) ||
+      !validUuid(input.requestId) ||
+      !validStyle(input.style) ||
+      typeof input.context !== "string" ||
+      characterCount(input.context) > 120 ||
+      /[\u0000-\u0008]/.test(input.context)
+    )
+      throw new StudioError(
+        "Choose a style and keep your direction under 120 characters.",
+      );
+    if (process.env.AI_ENABLED === "false")
+      throw new StudioError(
+        "The baby is on a creative break. Try again later.",
+        503,
+      );
+    const mock = mockEnabled();
+    if (!mock && !process.env.GEMINI_API_KEY)
+      throw new StudioError(
+        "The studio is awaiting Gemini configuration.",
+        503,
+      );
+    const { data: draft, error } = await admin
+      .from("humor_drafts")
+      .select("*")
+      .eq("image_id", input.uploadId)
+      .eq("user_id", ctx.user.id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!draft || draft.upload_status !== "ready")
+      throw new StudioError("Finish uploading the image first.");
+    if (draft.caption_id)
+      throw new StudioError(
+        "This draft has already been posted. Start a new one.",
+        409,
+      );
+    const prompt = captionPrompt(input.style, input.context);
+    const model = mock ? "demo-captions-v1" : geminiSettings().model;
+    const { data: id, error: reservation } = await admin.rpc(
+      "reserve_humor_generation",
+      {
+        image_id: input.uploadId,
+        owner: ctx.user.id,
+        request_key: input.requestId,
+        provider_name: mock ? "mock" : "google",
+        model_name: model,
+        system_text: SYSTEM_PROMPT,
+        user_text: prompt,
+        settings: GENERATION_CONFIG,
+        joke_style: input.style,
+        extra_context: input.context,
+      },
+    );
+    if (reservation) {
+      if (reservation.message.includes("Generation limit"))
+        throw new StudioError(
+          "Give it a minute between generations. Limit: 10 per day.",
+          429,
+        );
+      throw reservation;
+    }
+    generationId = id;
+    const { data: existing, error: lookup } = await admin
+      .from("humor_generations")
+      .select("status,caption_candidates")
+      .eq("id", id)
+      .single();
+    if (lookup) throw lookup;
+    if (existing.status === "completed")
+      return Response.json({
+        generationId: id,
+        mode: mock ? "mock" : "live",
+        candidates: existing.caption_candidates,
+      });
+    // Only the reservation creator may launch a billable request; duplicates see 409.
+    const { data: claimed, error: claim } = await admin
+      .from("humor_generations")
+      .update({ failure_stage: "request_started" })
+      .eq("id", id)
+      .is("failure_stage", null)
+      .select("id");
+    if (claim) throw claim;
+    if (!claimed?.length)
+      throw new StudioError(
+        "This generation is already running. Give it a moment.",
+        409,
+      );
+    const { data: file, error: download } = await admin.storage
+      .from("humor-images")
+      .download(draft.ai_path);
+    if (download || !file) throw download;
+    const result = mock
+      ? {
+          description: "Local demo image.",
+          captions: [
+            "A photo with the confidence of a group project leader.",
+            "My camera roll has better attendance than I do.",
+            "A small moment. An unnecessarily large personality.",
+            "Proof that a picture is worth at least four mediocre jokes.",
+          ],
+          usage: {},
+        }
+      : await generateCaptions(
+          new Uint8Array(await file.arrayBuffer()),
+          "image/png",
+          prompt,
+        );
+    const candidates: CaptionCandidate[] = result.captions.map((text) => ({
+      id: randomUUID(),
+      generationId: id,
+      originalText: text,
+      text,
+      source: "generated",
+    }));
+    const { error: saved } = await admin
+      .from("humor_generations")
+      .update({
+        status: "completed",
+        caption_candidates: candidates,
+        scene: result.description,
+        usage_metadata: result.usage,
+        completed_at: new Date().toISOString(),
+        failure_stage: null,
+      })
+      .eq("id", id);
     if (saved) throw saved;
-    return Response.json({ ok: true, imageId: id });
-  } catch {
-    console.error('Caption generation failed', { stage, imageId: id });
-    await admin.from('humor_generations').update({ status: 'failed', failure_stage: stage }).eq('image_id', id).eq('user_id', user.id);
-    await admin.from('humor_images').update({ status: 'failed' }).eq('id', id).eq('user_id', user.id);
-    await db.storage.from('humor-images').remove([path]);
-    return Response.json({ error: 'We couldn’t finish your captions. Please try another image in a minute.' }, { status: 502 });
+    return Response.json({
+      generationId: id,
+      mode: mock ? "mock" : "live",
+      candidates,
+    });
+  } catch (error) {
+    if (
+      generationId &&
+      admin &&
+      !(error instanceof StudioError && error.status === 409)
+    )
+      await admin
+        .from("humor_generations")
+        .update({ status: "failed", failure_stage: "generation" })
+        .eq("id", generationId)
+        .eq("status", "processing");
+    return studioFailure(error);
   }
 }

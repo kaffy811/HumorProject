@@ -1,7 +1,36 @@
-import Link from 'next/link';
-import { requireMember } from '@/lib/profile';
-import { SignOut } from '@/components/auth-form';
-export default async function MemberLayout({ children }: { children: React.ReactNode }) {
-  await requireMember(false);
-  return <><header className="site-header"><Link className="brand" href="/feed"><span className="brand-mark">h.</span>The Humor Project</Link><nav aria-label="Main navigation"><Link href="/feed">The feed</Link><Link href="/studio">Make a caption</Link><Link href="/profile">Profile</Link><SignOut /></nav></header><main>{children}</main><footer><Link className="brand" href="/feed">The Humor Project</Link><p>You bring the photos. We question your judgment.</p><Link href="/privacy">Privacy</Link></footer></>;
+import { requireMember } from "@/lib/profile";
+import { AppShell } from "@/components/shell/AppShell";
+import { MOODS } from "@/stores/mascot-store";
+export const dynamic = "force-dynamic";
+export default async function MemberLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { db, profile } = await requireMember(false);
+  const { data } = profile?.avatar_path
+    ? await db.storage
+        .from("humor-avatars")
+        .createSignedUrl(profile.avatar_path, 3600)
+    : { data: null };
+  const author = {
+    name:
+      [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") ||
+      "You",
+    username: profile?.username || "new_member",
+    avatarUrl: data?.signedUrl || null,
+  };
+  return (
+    <>
+      {MOODS.map((mood) => (
+        <link
+          key={mood}
+          rel="preload"
+          as="image"
+          href={`/baby/bust/${mood}.png`}
+        />
+      ))}
+      <AppShell author={author}>{children}</AppShell>
+    </>
+  );
 }

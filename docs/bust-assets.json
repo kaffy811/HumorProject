@@ -1,0 +1,56 @@
+{
+  "tool": "built-in image_gen",
+  "reference": "public/baby/smirk.png",
+  "composition": "Front-facing aligned square bust. Head top 8%, chin 60%, shoulders 76%, chest 96%. White background, no text, no props.",
+  "assets": {
+    "smirk": {
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-3d34936e-4929-475d-ac15-02f87f7d1c1b.png",
+      "destination": "public/baby/bust/smirk.png"
+    },
+    "wink": {
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-88498f57-631e-4b8f-8763-eb6301a3cdd2.png",
+      "destination": "public/baby/bust/wink.png"
+    },
+    "huh": {
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-cd49ee37-a2a9-4646-9067-5fa1616b140f.png",
+      "destination": "public/baby/bust/huh.png"
+    },
+    "annoyed": {
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-3846a354-2027-4a19-807b-af0ae99d4cdc.png",
+      "destination": "public/baby/bust/annoyed.png"
+    },
+    "pout": {
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-7d26eedc-8643-4852-83c7-4fbcb1be0342.png",
+      "destination": "public/baby/bust/pout.png"
+    },
+    "confused": {
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-4b9329f8-1844-4317-8129-08cedaafb80f.png",
+      "destination": "public/baby/bust/confused.png"
+    },
+    "thinking": {
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-dccbdd00-05b4-4666-915f-887998e66d40.png",
+      "destination": "public/baby/bust/thinking.png"
+    },
+    "cry": {
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-088da8ac-d74a-4611-a701-44f8d2090885.png",
+      "destination": "public/baby/bust/cry.png"
+    },
+    "heart": {
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-89aeff25-8d96-43d5-97ad-ece0fc660eaf.png",
+      "destination": "public/baby/bust/heart.png"
+    },
+    "smug": {
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-ccd8092e-b8b8-4472-99a6-cc04f91ce53e.png",
+      "destination": "public/baby/bust/smug.png"
+    },
+    "omg": {
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-ca49ca1f-163e-4a48-8706-c5400077c059.png",
+      "destination": "public/baby/bust/omg.png"
+    },
+    "giggle": {
+      "source": "/Users/kaffy/.codex/generated_images/01a12399-dd55-7e01-992b-efb628e8e3fd/exec-29aec0f7-255a-4f25-837a-dca2042958b8.png",
+      "destination": "public/baby/bust/giggle.png",
+      "note": "Fully clothed pale yellow shirt after original output was safety-rejected."
+    }
+  }
+}

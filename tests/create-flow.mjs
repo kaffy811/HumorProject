@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {createRequire} from 'node:module';
+import ts from 'typescript';
+const require=createRequire(import.meta.url);
+function load(file,deps={}) {const code=ts.transpile(readFileSync(file,'utf8'),{module:ts.ModuleKind.CommonJS});const m={exports:{}};new Function('module','exports','require',code)(m,m.exports,id=>deps[id]||require(id));return m.exports;}
+const contracts=load('lib/create-contracts.ts');const {reduceCreate:act,initialState:start,selectedCaption,hasUnpublishedContent}=load('stores/create-store.ts',{'@/lib/create-contracts':contracts});
+assert.equal(contracts.imageError({type:'image/gif',size:10_000_000}),null);assert.ok(contracts.imageError({type:'image/png',size:10_000_001}));assert.ok(contracts.imageError({type:'image/svg+xml',size:30}));
+let s=act(start,{type:'IMAGE_SELECTED',requestId:'upload2',image:{uploadId:null,previewUrl:'blob:test',filename:'x.gif',mimeType:'image/gif',bytes:20}});
+assert.equal(act(s,{type:'UPLOAD_READY',requestId:'upload1',draftId:'old',uploadId:'old'}),s);
+s=act(s,{type:'UPLOAD_READY',requestId:'upload2',draftId:'draft',uploadId:'image'});assert.equal(s.step,2);
+s=act(s,{type:'SET_CONTEXT',text:'😀'.repeat(121)});assert.equal(contracts.characterCount(s.context),120);
+s=act(s,{type:'GENERATE_STARTED',requestId:'gen1'});assert.equal(s.phase,'generating');
+const candidates=[0,1,2,3].map(i=>({id:'c'+i,generationId:'g1',text:'caption'+i,originalText:'caption'+i,source:'generated'}));
+s=act(s,{type:'GENERATE_SUCCEEDED',requestId:'gen1',candidates,mode:'live'});assert.equal(s.step,4);assert.ok(hasUnpublishedContent(s));
+s=act(s,{type:'SELECT_CAPTION',id:'c1'});s=act(s,{type:'EDIT_CAPTION',id:'c1',text:'My careful edit'});
+s=act(s,{type:'GENERATE_STARTED',requestId:'gen2'});assert.equal(s.retainedCandidate.text,'My careful edit');assert.equal(s.phase,'regenerating');
+s=act(s,{type:'GENERATE_FAILED',requestId:'gen2',message:'retry'});assert.equal(selectedCaption(s).text,'My careful edit');assert.equal(s.phase,'regeneration-error');
+s=act(s,{type:'GENERATE_STARTED',requestId:'gen3'});s=act(s,{type:'GENERATE_SUCCEEDED',requestId:'gen3',candidates:candidates.map(c=>({...c,id:c.id+'new',generationId:'g2'})),mode:'live'});assert.equal(s.candidates.length,4);assert.equal(selectedCaption(s).text,'My careful edit');
+s=act(s,{type:'PUBLISH_STARTED',requestId:'post1'});s=act(s,{type:'PUBLISH_FAILED',requestId:'post1',message:'retry'});assert.equal(selectedCaption(s).text,'My careful edit');
+s=act(s,{type:'PUBLISH_STARTED',requestId:'post2'});assert.equal(act(s,{type:'PUBLISH_SUCCEEDED',requestId:'post1',postId:'old'}),s);s=act(s,{type:'PUBLISH_SUCCEEDED',requestId:'post2',postId:'posted'});assert.equal(hasUnpublishedContent(s),false);
+const {createMascotStore}=load('stores/mascot-store.ts');const mascot=createMascotStore();mascot.getState().setMood('cry',20);mascot.getState().setMood('thinking',0);await new Promise(resolve=>setTimeout(resolve,40));assert.equal(mascot.getState().mood,'thinking');mascot.getState().resetMood();mascot.getState().poke();assert.equal(mascot.getState().mood,'huh');mascot.getState().poke();assert.equal(mascot.getState().mood,'annoyed');mascot.getState().poke();assert.equal(mascot.getState().mood,'smirk');mascot.getState().dispose();
+console.log('PASS upload limits/GIF, stale request rejection, Unicode limits, edited caption retention, failure recovery, publication state and interrupted mascot timers');

@@ -13,7 +13,7 @@ const claims = { sub: 'sam', amr: [{ method: 'oauth', timestamp: 10 }] };
 assert.equal(isGoogleSession(google, claims), true);
 assert.equal(isGoogleSession(google, { ...claims, amr: [...claims.amr, { method: 'token_refresh', timestamp: 20 }, { method: 'totp', timestamp: 30 }] }), true);
 for (const [user, jwt] of [[null,claims],[{...google,identities:[{provider:'email'}]},claims],[google,{...claims,sub:'other'}],[google,{sub:'sam'}],[google,{...claims,amr:[{method:'password',timestamp:20}]}],[google,{...claims,amr:[...claims.amr,{method:'password',timestamp:20}]}],[{...google,is_anonymous:true},claims]]) assert.equal(isGoogleSession(user,jwt), false);
-const { profileComplete } = load('lib/profile.ts');
+const { profileComplete } = load('lib/profile-complete.ts');
 const complete = { first_name:'Sam',last_name:'Jones',username:'sam_j',avatar_path:'sam/photo.png' };
 assert.equal(profileComplete(complete),true);
 for (const field of Object.keys(complete)) assert.equal(profileComplete({...complete,[field]:null}),false);
