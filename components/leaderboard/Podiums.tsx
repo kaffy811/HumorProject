@@ -46,7 +46,12 @@ export function PeoplePodium({ people }: { people: RankedPerson[] }) {
           </span>
           <Link href={`/u/${person.user.id}`} className="person-profile">
             <RankAvatar name={person.user.name} src={person.user.avatarUrl} />
-            <h2>{person.user.name}</h2>
+            <h2>
+              {person.user.name}{" "}
+              {person.user.isOfficial && (
+                <span className="host-label comic-label">HOST</span>
+              )}
+            </h2>
           </Link>
           <p className="person-ha">
             {person.haReceived} <span>Ha</span>

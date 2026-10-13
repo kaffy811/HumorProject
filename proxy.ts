@@ -55,11 +55,20 @@ export async function proxy(request: NextRequest) {
   if (signedIn && !path.startsWith("/api/") && path !== "/profile") {
     const { data: profile, error: profileError } = await db
       .from("profiles")
-      .select("first_name,last_name,username,avatar_path")
+      .select("first_name,last_name,username,avatar_path,onboarded_at")
       .eq("id", user!.id)
       .maybeSingle();
     if (!profileError && !profileComplete(profile))
       return redirectTo("/profile");
+    if (
+      !profileError &&
+      profileComplete(profile) &&
+      !profile?.onboarded_at &&
+      !publicPost &&
+      (path !== "/create" ||
+        request.nextUrl.searchParams.get("welcome") !== "1")
+    )
+      return redirectTo("/create?welcome=1");
   }
   response.headers.set("Cache-Control", "private, no-store");
   return response;

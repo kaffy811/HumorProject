@@ -19,6 +19,15 @@ export async function GET(request: Request) {
       viewer: ctx.user.id,
     });
     if (error) throw error;
+    data.people = await Promise.all(
+      data.people.map(async (person: { user: { id: string } }) => {
+        const author = await ctx.admin.rpc("humor_author", {
+          author_id: person.user.id,
+        });
+        if (author.error) throw author.error;
+        return { ...person, user: author.data };
+      }),
+    );
     return Response.json(data, {
       headers: { "Cache-Control": "private, no-store" },
     });

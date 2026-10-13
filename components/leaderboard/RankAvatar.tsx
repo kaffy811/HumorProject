@@ -8,8 +8,8 @@ export function RankAvatar({
   name: string;
   src: string | null;
 }) {
-  const [failed, setFailed] = useState(false);
-  return src && !failed ? (
+  const [failed, setFailed] = useState<string | null>(null);
+  return src && failed !== src ? (
     <img
       className="rank-avatar"
       src={src}
@@ -17,7 +17,7 @@ export function RankAvatar({
       width={96}
       height={96}
       loading="lazy"
-      onError={() => setFailed(true)}
+      onError={() => setFailed(src)}
     />
   ) : (
     <span className="rank-avatar rank-avatar-fallback" aria-hidden="true">

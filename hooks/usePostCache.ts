@@ -1,4 +1,5 @@
 "use client";
+import { patchProfileCounts, type CachedProfile } from "@/lib/profile-cache";
 import { useCallback } from "react";
 import { useSWRConfig } from "swr";
 import { useFeedViewer } from "@/components/feed/FeedCacheProvider";
@@ -22,6 +23,15 @@ export function usePostCache() {
             return;
           }
           if (!Array.isArray(parsed) || parsed[1] !== viewer) return;
+          if (parsed[0] === "profile" && parsed[2] === post.author.id) {
+            await mutate(
+              key,
+              (value: CachedProfile | undefined) =>
+                value ? patchProfileCounts(value, post, change) : value,
+              { revalidate: false },
+            );
+            if (change === null) void mutate(key);
+          }
           if (parsed[0] === "leaderboard") {
             await mutate<LeaderboardData>(
               key,
@@ -43,7 +53,11 @@ export function usePostCache() {
               { revalidate: false },
             );
           }
-          if (parsed[0] === "posts" || parsed[0] === "recommendations")
+          if (
+            parsed[0] === "posts" ||
+            parsed[0] === "recommendations" ||
+            parsed[0] === "profile-posts"
+          )
             await mutate(
               key,
               (value: PostPage | PostPage[] | undefined) => {
@@ -52,8 +66,10 @@ export function usePostCache() {
                   Array.isArray(value) ? value : [value],
                   post,
                   change,
-                  parsed[2] === "saved",
-                  parsed[3] === 0,
+                  parsed[2] === "saved" ||
+                    (parsed[0] === "profile-posts" && parsed[3] === "saved"),
+                  parsed[3] === 0 ||
+                    (parsed[0] === "profile-posts" && parsed[4] === 0),
                 );
                 return Array.isArray(value) ? result : result[0];
               },

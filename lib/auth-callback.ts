@@ -45,7 +45,7 @@ export async function finishAuth(request: NextRequest, mode: "code" | "email") {
   } else {
     const { data: profile, error } = await db
       .from("profiles")
-      .select("first_name,last_name,username,avatar_path")
+      .select("first_name,last_name,username,avatar_path,onboarded_at")
       .eq("id", user!.id)
       .maybeSingle();
     if (error || !profileComplete(profile))
@@ -53,7 +53,14 @@ export async function finishAuth(request: NextRequest, mode: "code" | "email") {
         "Location",
         new URL("/profile", request.url).toString(),
       );
-    else response.cookies.delete(RETURN_COOKIE);
+    else {
+      if (!profile?.onboarded_at && !/^\/post\/[^/?#]+(?:[?#]|$)/.test(target))
+        response.headers.set(
+          "Location",
+          new URL("/create?welcome=1", request.url).toString(),
+        );
+      response.cookies.delete(RETURN_COOKIE);
+    }
   }
   return response;
 }

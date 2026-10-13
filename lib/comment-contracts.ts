@@ -7,7 +7,7 @@ export interface Comment {
   createdAt: string;
   haCount: number;
   viewerHasHa: boolean;
-  replyTo: { id: string; authorName: string } | null;
+  replyTo: { id: string; authorName: string; authorId?: string | null } | null;
 }
 export type CommentSort = "top" | "new";
 export interface CommentPage {
@@ -53,7 +53,7 @@ export function patchComments(
               ...c,
               replyTo:
                 c.replyTo?.id === id && !change
-                  ? { ...c.replyTo, authorName: "deleted" }
+                  ? { ...c.replyTo, authorName: "deleted", authorId: null }
                   : c.replyTo,
             },
           ],

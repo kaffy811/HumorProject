@@ -6,12 +6,13 @@ export interface Post {
   imageHeight: number;
   caption: string;
   style: JokeStyle;
-  author: { id: string; name: string; avatarUrl: string | null };
+  author: { id: string; name: string; avatarUrl: string | null; isOfficial?: boolean };
   createdAt: string;
   haCount: number;
   commentCount: number;
   viewerHasHa: boolean;
   viewerHasSaved: boolean;
+  firstPostPending?: boolean;
 }
 export type PostSort = "hot" | "new" | "mine" | "saved";
 export interface PostPage {

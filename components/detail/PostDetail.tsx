@@ -1,4 +1,5 @@
 "use client";
+import {FirstPostNotice} from "@/components/onboarding/FirstPostNotice";
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -79,6 +80,7 @@ export function PostDetail({ id }: { id: string }) {
     return <MissingPost />;
   return (
     <section className="post-detail-page">
+      {post && <FirstPostNotice postId={post.id} pending={!!post.firstPostPending}/>}
       <Link className="detail-back" href={back || "/feed"} scroll={false}>
         ← Back to the feed
       </Link>

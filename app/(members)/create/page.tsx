@@ -1,10 +1,17 @@
+import { mockEnabled } from "@/lib/studio-server";
 import { memberAuth } from "@/lib/member-auth";
 import { CreateFlow } from "@/components/create/CreateFlow";
-export default async function CreatePage() {
+export default async function CreatePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ welcome?: string }>;
+}) {
   const { db, user } = await memberAuth();
   const { data: profile } = await db
     .from("profiles")
-    .select("first_name,last_name,username,avatar_path")
+    .select(
+      "first_name,last_name,username,avatar_path,display_name,onboarded_at",
+    )
     .eq("id", user!.id)
     .maybeSingle();
   const { data } = profile?.avatar_path
@@ -12,10 +19,15 @@ export default async function CreatePage() {
         .from("humor-avatars")
         .createSignedUrl(profile.avatar_path, 3600)
     : { data: null };
+  const query = await searchParams;
   return (
     <CreateFlow
+      welcome={
+        query.welcome === "1" && (!profile?.onboarded_at || mockEnabled())
+      }
       author={{
         name:
+          profile?.display_name ||
           [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") ||
           "You",
         username: profile?.username || "you",

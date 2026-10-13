@@ -1,11 +1,13 @@
-export default function UserPage() {
-  return (
-    <section className="placeholder-page">
-      <h1>A person. Allegedly.</h1>
-      <p>
-        Their posts will live here. For now, the leaderboard is doing the
-        talking.
-      </p>
-    </section>
-  );
+import { redirect } from "next/navigation";
+import { requireMember } from "@/lib/profile";
+import { ProfilePage } from "@/components/profile/ProfilePage";
+export default async function UserPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { user } = await requireMember();
+  const { id } = await params;
+  if (id === user!.id) redirect("/me");
+  return <ProfilePage id={id} />;
 }

@@ -1,3 +1,4 @@
+import { prepareImage } from "@/lib/media/prepare-image";
 import { createHash } from "node:crypto";
 import sharp from "sharp";
 import { MAX_IMAGE_BYTES, validUuid } from "@/lib/create-contracts";
@@ -80,16 +81,37 @@ export async function POST(
       .from("humor-images")
       .upload(aiPath, normalized, { contentType: "image/png", upsert: true });
     if (upload) throw upload;
+    let displayPath = draft.image_path;
+    if (mime !== "image/gif") {
+      const display = await prepareImage(bytes);
+      displayPath = `${user.id}/${id}-display.webp`;
+      const source = await admin.storage
+        .from("humor-images")
+        .upload(displayPath, display.bytes, {
+          contentType: display.mime,
+          upsert: true,
+        });
+      if (source.error) throw source.error;
+      const dims = await admin
+        .from("humor_images")
+        .update({ image_width: display.width, image_height: display.height })
+        .eq("id", id)
+        .eq("user_id", user.id);
+      if (dims.error) throw dims.error;
+    }
     const { error: saved } = await admin
       .from("humor_drafts")
       .update({
         upload_status: "ready",
+        image_path: displayPath,
         ai_path: aiPath,
         image_sha256: createHash("sha256").update(normalized).digest("hex"),
       })
       .eq("image_id", id)
       .eq("user_id", user.id);
     if (saved) throw saved;
+    if (displayPath !== draft.image_path)
+      await admin.storage.from("humor-images").remove([draft.image_path]);
     return Response.json({ draftId: id, uploadId: id });
   } catch (error) {
     return studioFailure(error);

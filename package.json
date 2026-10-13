@@ -7,7 +7,8 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test": "node tests/humor-validation.mjs && node tests/gemini-profile.mjs && node tests/baby-auth.mjs && node tests/create-flow.mjs && node tests/feed.mjs && node tests/comments.mjs && node tests/leaderboard.mjs"
+    "test": "node tests/humor-validation.mjs && node tests/gemini-profile.mjs && node tests/baby-auth.mjs && node tests/create-flow.mjs && node tests/feed.mjs && node tests/comments.mjs && node tests/leaderboard.mjs && node tests/member-features.mjs",
+    "seed": "node --import tsx scripts/seed.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -29,6 +30,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
     "tailwindcss": "^4",
+    "tsx": "^4.20.6",
     "typescript": "^5"
   }
 }

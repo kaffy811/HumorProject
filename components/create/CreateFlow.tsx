@@ -1,4 +1,5 @@
 "use client";
+import { WelcomeBanner } from "@/components/onboarding/WelcomeBanner";
 import { useCreate } from "@/stores/StoreProvider";
 import { selectedCaption } from "@/stores/create-store";
 import { useCreateController } from "@/hooks/useCreateController";
@@ -11,7 +12,13 @@ import { StylePicker } from "./StylePicker";
 import { CaptionCandidates } from "./CaptionCandidates";
 import { PublishPanel } from "./PublishPanel";
 import type { Author } from "@/lib/create-contracts";
-export function CreateFlow({ author }: { author: Author }) {
+export function CreateFlow({
+  author,
+  welcome = false,
+}: {
+  author: Author;
+  welcome?: boolean;
+}) {
   const state = useCreate((s) => s);
   const actions = useCreateController();
   const guard = useUnsavedDraftGuard();
@@ -25,7 +32,11 @@ export function CreateFlow({ author }: { author: Author }) {
       <div className="create-heading">
         <span className="comic-label">The camera roll deserves better</span>
         <h1>Make something funny.</h1>
-        <p>You supply the photo. We supply the questionable judgment.</p>
+        <p>
+          {welcome
+            ? "First one's free. Actually they're all free."
+            : "You supply the photo. We supply the questionable judgment."}
+        </p>
         <svg className="comic-star" viewBox="0 0 32 32" aria-hidden="true">
           <path
             d="M14 0h4v11l8-8 3 3-8 8h11v4H21l8 8-3 3-8-8v11h-4V21l-8 8-3-3 8-8H0v-4h11L3 6l3-3 8 8z"
@@ -33,6 +44,7 @@ export function CreateFlow({ author }: { author: Author }) {
           />
         </svg>
       </div>
+      {welcome && <WelcomeBanner />}
       <div className="create-steps">
         <StepPanel
           number={1}

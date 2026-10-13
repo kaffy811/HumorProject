@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import { cropAvatarFile } from "@/lib/avatar-client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { safeReturnPath } from "@/lib/auth-return";
@@ -61,15 +62,15 @@ export function ProfileForm({
     if (
       !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
       !file.size ||
-      file.size > 2000000
+      file.size > 5000000
     ) {
-      setError("Choose a JPEG, PNG or WebP under 2 MB.");
+      setError("Choose a JPEG, PNG or WebP under 5 MB.");
       return;
     }
     setBusy(true);
     try {
       const form = new FormData();
-      form.set("photo", file);
+      form.set("photo", await cropAvatarFile(file));
       const response = await fetch("/api/profile/avatar", {
         method: "POST",
         body: form,
@@ -121,7 +122,7 @@ export function ProfileForm({
             />
           </label>
           <p className="fine-print">
-            Required to join · JPEG, PNG or WebP · up to 2 MB
+            Required to join · JPEG, PNG or WebP · up to 5 MB
             <br />
             Your profile photo stays private.
           </p>

@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
+import { usePublicAuthor } from "@/stores/author-store";
 import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion, useAnimationControls } from "framer-motion";
 import type { Comment } from "@/lib/comment-contracts";
@@ -24,11 +25,17 @@ export function CommentItem({
   onDelete: () => Promise<void>;
   onPatch: (change: Partial<Comment>) => Promise<void>;
 }) {
+  const author = usePublicAuthor(comment.author);
+  const replyAuthor = usePublicAuthor({
+    id: comment.replyTo?.authorId || "",
+    name: comment.replyTo?.authorName || "",
+    avatarUrl: null,
+  });
   const [busy, setBusy] = useState(false),
     [dialog, setDialog] = useState<"delete" | "report" | null>(null),
     [reason, setReason] = useState<string>(REPORT_REASONS[0]),
     [error, setError] = useState(""),
-    [avatarFailed, setAvatarFailed] = useState(false);
+    [avatarFailed, setAvatarFailed] = useState<string | null>(null);
   const lock = useRef(false),
     options = useRef<HTMLDetailsElement>(null),
     reduced = useReducedMotion(),
@@ -93,26 +100,27 @@ export function CommentItem({
   }
   return (
     <li
+      id={`comment-${comment.id}`}
       className={`comment-item ${highlighted ? "is-highlighted" : ""}`}
       aria-busy={pending}
     >
       <div className="comment-avatar">
-        {comment.author.avatarUrl && !avatarFailed ? (
+        {author.avatarUrl && avatarFailed !== author.avatarUrl ? (
           <img
-            src={comment.author.avatarUrl}
+            src={author.avatarUrl}
             alt=""
             width={32}
             height={32}
             loading="lazy"
-            onError={() => setAvatarFailed(true)}
+            onError={() => setAvatarFailed(author.avatarUrl)}
           />
         ) : (
-          <span aria-hidden="true">{comment.author.name.slice(0, 1)}</span>
+          <span aria-hidden="true">{author.name.slice(0, 1)}</span>
         )}
       </div>
       <div className="comment-content">
         <div className="comment-meta">
-          <strong>{comment.author.name}</strong>
+          <strong>{author.name}</strong>
           {comment.author.id === op && (
             <span className="comic-label comment-op">OP</span>
           )}
@@ -123,9 +131,7 @@ export function CommentItem({
         </div>
         <p className="comment-body">
           {comment.replyTo && (
-            <span className="comment-mention">
-              @{comment.replyTo.authorName}{" "}
-            </span>
+            <span className="comment-mention">@{replyAuthor.name} </span>
           )}
           {comment.body}
         </p>
@@ -153,9 +159,7 @@ export function CommentItem({
               }
             }}
           >
-            <summary
-              aria-label={`Options for ${comment.author.name}'s comment`}
-            >
+            <summary aria-label={`Options for ${author.name}'s comment`}>
               …
             </summary>
             <div className="post-popover">

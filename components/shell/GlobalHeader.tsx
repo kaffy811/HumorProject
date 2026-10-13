@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import { useAuthorStore } from "@/stores/author-store";
+import { useFeedViewer } from "@/components/feed/FeedCacheProvider";
 import { usePathname } from "next/navigation";
 import { Mascot } from "./Mascot";
 import { UserMenu } from "./UserMenu";
@@ -10,7 +12,10 @@ export const NAV_ITEMS = [
   { href: "/top", label: "Top" },
 ];
 export function GlobalHeader({ author }: { author: Author | null }) {
-  const path = usePathname();
+  const path = usePathname(),
+    viewer = useFeedViewer(),
+    updated = useAuthorStore((s) => s.authors[viewer]);
+  const current = author && updated ? { ...author, ...updated } : author;
   return (
     <header className="comic-header">
       <div className="comic-header-inner">
@@ -44,7 +49,7 @@ export function GlobalHeader({ author }: { author: Author | null }) {
             </nav>
           )}
           {author ? (
-            <UserMenu author={author} />
+            <UserMenu author={current!} />
           ) : (
             <Link
               className="comic-button is-secondary guest-header-login"

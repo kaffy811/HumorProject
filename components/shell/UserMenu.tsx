@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- Blob previews, animated GIFs and private signed URLs are intentionally rendered directly. */
 "use client";
 import Link from "next/link";
+import { useNotifications } from "@/hooks/useNotifications";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -11,7 +12,8 @@ export function UserMenu({ author }: { author: Author }) {
     [error, setError] = useState("");
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
-  const router = useRouter();
+  const router = useRouter(),
+    { data: notifications } = useNotifications();
   useEffect(() => {
     if (!open) return;
     const close = (e: PointerEvent) => {
@@ -35,7 +37,7 @@ export function UserMenu({ author }: { author: Author }) {
       <button
         ref={button}
         className="avatar-button"
-        aria-label="Open account menu"
+        aria-label={`Open account menu${notifications?.unreadCount ? `, ${notifications.unreadCount} unread notifications` : ""}`}
         aria-expanded={open}
         aria-controls="account-menu"
         onClick={() => setOpen(!open)}
@@ -45,14 +47,22 @@ export function UserMenu({ author }: { author: Author }) {
         ) : (
           <span>{author.name.slice(0, 1)}</span>
         )}
+        {!!notifications?.unreadCount && (
+          <span className="notification-badge" aria-hidden="true">
+            {notifications.unreadCount > 9 ? "9+" : notifications.unreadCount}
+          </span>
+        )}
       </button>
       {open && (
         <div id="account-menu" className="account-dropdown">
+          <Link href="/notifications" onClick={() => setOpen(false)}>
+            Notifications
+          </Link>
           <span className="comic-label">{author.username}</span>
           <Link href="/me" onClick={() => setOpen(false)}>
             My posts
           </Link>
-          <Link href="/profile" onClick={() => setOpen(false)}>
+          <Link href="/me?edit=1" onClick={() => setOpen(false)}>
             Edit profile
           </Link>
           <button

@@ -30,10 +30,26 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   if (!sameOrigin(request))
     return Response.json({ error: "Invalid origin." }, { status: 403 });
-  const { user } = await memberAuth();
+  const { user, db } = await memberAuth();
   if (!user) return Response.json({ error: "Sign in first." }, { status: 401 });
   const jar = await cookies(),
-    target = safeReturnPath(jar.get(RETURN_COOKIE)?.value) || "/feed";
+    stored = safeReturnPath(jar.get(RETURN_COOKIE)?.value);
+  const { data: profile, error } = await db
+    .from("profiles")
+    .select("onboarded_at")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (error)
+    return Response.json(
+      { error: "Your profile could not be loaded." },
+      { status: 503 },
+    );
+  const target =
+    stored && /^\/post\/[^/?#]+(?:[?#]|$)/.test(stored)
+      ? stored
+      : !profile?.onboarded_at
+        ? "/create?welcome=1"
+        : stored || "/feed";
   jar.delete(RETURN_COOKIE);
   return Response.json(
     { target },

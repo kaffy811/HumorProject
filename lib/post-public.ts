@@ -51,14 +51,14 @@ export const publicPost = cache(async (id: string) => {
   if (i.status !== "ready") return null;
   const { data: p, error: pe } = await db
     .from("profiles")
-    .select("first_name,last_name,username")
+    .select("first_name,last_name,username,display_name")
     .eq("id", i.user_id)
     .maybeSingle();
   if (pe) throw pe;
   return {
     id: c.id,
     caption: c.content,
-    authorName:
+    authorName: p?.display_name ||
       [p?.first_name, p?.last_name].filter(Boolean).join(" ") ||
       p?.username ||
       "Member",

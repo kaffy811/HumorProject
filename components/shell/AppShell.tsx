@@ -3,6 +3,7 @@ import {
   FeedCacheProvider,
   PostFeedback,
 } from "@/components/feed/FeedCacheProvider";
+import { NotificationListener } from "@/hooks/useNotifications";
 import { StoreProvider } from "@/stores/StoreProvider";
 import { GlobalHeader } from "./GlobalHeader";
 import { MobileNavigation } from "./MobileNavigation";
@@ -19,6 +20,7 @@ export function AppShell({
   return (
     <StoreProvider key={viewerId}>
       <FeedCacheProvider viewerId={viewerId} author={author}>
+        <NotificationListener />
         <div className="member-shell">
           <a className="skip-link" href="#member-content">
             Skip to content

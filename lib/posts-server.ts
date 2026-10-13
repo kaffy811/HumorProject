@@ -58,6 +58,7 @@ interface RawPost {
   imagePath: string;
   imageWidth: number | null;
   imageHeight: number | null;
+  author?: Post["author"];
   authorId: string;
   authorName: string;
   avatarPath: string | null;
@@ -123,7 +124,7 @@ export async function fetchPostPage(
         imageWidth: width || 800,
         imageHeight: height || 800,
         imageUrl: `/api/posts/${raw.id}/media`,
-        author: {
+        author: raw.author || {
           id: raw.authorId,
           name: raw.authorName,
           avatarUrl: raw.avatarPath

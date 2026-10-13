@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useContext, useState, useCallback } from "react";
+import { useAuthorStore } from "@/stores/author-store";
 import { SWRConfig } from "swr";
 const Viewer = createContext("");
 const ViewerAuthor = createContext<{ name: string; avatarUrl: string | null }>({
@@ -7,7 +8,10 @@ const ViewerAuthor = createContext<{ name: string; avatarUrl: string | null }>({
   avatarUrl: null,
 });
 export function useViewerAuthor() {
-  return useContext(ViewerAuthor);
+  const base = useContext(ViewerAuthor),
+    viewer = useContext(Viewer),
+    updated = useAuthorStore((s) => s.authors[viewer]);
+  return updated || base;
 }
 const Feedback = createContext<{
   message: string;

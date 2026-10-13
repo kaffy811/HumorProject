@@ -1,5 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef } from "react";
+import { useSWRConfig } from "swr";
+import { useFeedViewer } from "@/components/feed/FeedCacheProvider";
 import { useRouter } from "next/navigation";
 import { useStores } from "@/stores/StoreProvider";
 import { selectedCaption } from "@/stores/create-store";
@@ -10,6 +12,8 @@ import { publishPost } from "@/lib/publishPost";
 export function useCreateController() {
   const { create, mascot } = useStores();
   const router = useRouter();
+  const { mutate } = useSWRConfig();
+  const viewer = useFeedViewer();
   const file = useRef<File | null>(null);
   const active = useRef<AbortController | null>(null);
   const preview = useRef<string | null>(null);
@@ -143,6 +147,21 @@ export function useCreateController() {
       if (controller.signal.aborted) return;
       dispatch({ type: "PUBLISH_SUCCEEDED", requestId, postId: result.postId });
       mascot.getState().setMood("heart");
+      void mutate(
+        (key) => {
+          try {
+            const parsed = JSON.parse(String(key));
+            return (
+              parsed[1] === viewer &&
+              ["profile", "profile-posts"].includes(parsed[0])
+            );
+          } catch {
+            return false;
+          }
+        },
+        undefined,
+        { revalidate: true },
+      ).catch(() => {});
       redirectTimer.current = setTimeout(() => router.push(result.href), 1500);
     } catch (error) {
       if (controller.signal.aborted) return;
@@ -156,7 +175,7 @@ export function useCreateController() {
       });
       mascot.getState().setMood("cry");
     }
-  }, [create, dispatch, mascot, router]);
+  }, [create, dispatch, mascot, router, mutate, viewer]);
   return {
     selectFile,
     generate,

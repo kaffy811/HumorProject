@@ -1,4 +1,8 @@
 "use client";
+import { useSearchParams } from "next/navigation";
+import useSWR from "swr";
+import { profileRequest } from "@/lib/profiles";
+import { validUuid } from "@/lib/create-contracts";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import type { Post } from "@/lib/post-contracts";
 import type { Comment, CommentSort } from "@/lib/comment-contracts";
@@ -16,6 +20,24 @@ export function CommentsPanel({
   input: RefObject<HTMLTextAreaElement | null>;
 }) {
   const panel = useRef<HTMLElement>(null);
+  const params = useSearchParams(),
+    targetId = params.get("comment");
+  const target = useSWR(
+    validUuid(targetId)
+      ? JSON.stringify(["comment-target", viewerId, post.id, targetId])
+      : null,
+    () =>
+      profileRequest<Comment>(`/api/comments/${targetId}?postId=${post.id}`),
+  );
+  const targetScrolled = useRef<string | null>(null);
+  useEffect(() => {
+    if (!target.data || targetScrolled.current === target.data.id) return;
+    targetScrolled.current = target.data.id;
+    document
+      .getElementById(`comment-${target.data.id}`)
+      ?.scrollIntoView({ block: "center", behavior: "instant" });
+    input.current?.focus({ preventScroll: true });
+  }, [target.data, input]);
   const [sort, setSort] = useState<CommentSort>("top"),
     [reply, setReply] = useState<Comment | null>(null),
     comments = useComments(post, sort),
@@ -72,13 +94,21 @@ export function CommentsPanel({
           {comments.announcement}
         </span>
         <ul className="comment-list">
-          {comments.comments.map((c) => (
+          {[
+            ...(target.data &&
+            !comments.comments.some((c) => c.id === target.data!.id)
+              ? [target.data]
+              : []),
+            ...comments.comments,
+          ].map((c) => (
             <CommentItem
               key={c.id}
               comment={c}
               viewerId={viewerId}
               op={post.author.id}
-              highlighted={comments.highlighted.has(c.id)}
+              highlighted={
+                comments.highlighted.has(c.id) || c.id === target.data?.id
+              }
               onReply={() => {
                 setReply(c);
                 input.current?.focus();

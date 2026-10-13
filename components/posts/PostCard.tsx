@@ -1,6 +1,8 @@
 /* eslint-disable @next/next/no-img-element -- Private Storage and blob previews require direct image rendering. */
 "use client";
 import Link from "next/link";
+import { usePublicAuthor } from "@/stores/author-store";
+import { useFeedViewer } from "@/components/feed/FeedCacheProvider";
 import { useEffect, useRef, useState } from "react";
 import type { Author, JokeStyle } from "@/lib/create-contracts";
 import { imageRatio, relativeTime, type Post } from "@/lib/post-contracts";
@@ -28,7 +30,7 @@ type Props =
     };
 export function PostCard(props: Props) {
   const preview = props.preview === true,
-    post: Post = preview
+    basePost: Post = preview
       ? {
           id: "preview",
           imageUrl: props.imageUrl,
@@ -48,9 +50,15 @@ export function PostCard(props: Props) {
           viewerHasSaved: false,
         }
       : props.post;
+  const viewer = useFeedViewer();
+  const resolved = usePublicAuthor({
+    ...basePost.author,
+    id: preview ? viewer : basePost.author.id,
+  });
+  const post = { ...basePost, author: resolved };
   const card = useRef<HTMLDivElement>(null),
     [failed, setFailed] = useState(false),
-    [avatarFailed, setAvatarFailed] = useState(false),
+    [avatarFailed, setAvatarFailed] = useState<string | null>(null),
     [clock, setClock] = useState(() => Date.now());
   useEffect(() => {
     if (preview) return;
@@ -88,14 +96,14 @@ export function PostCard(props: Props) {
     >
       <div className="post-head">
         <div className="post-author">
-          {post.author.avatarUrl && !avatarFailed ? (
+          {post.author.avatarUrl && avatarFailed !== post.author.avatarUrl ? (
             <img
               src={post.author.avatarUrl}
               alt=""
               width={32}
               height={32}
               loading={preview ? "eager" : "lazy"}
-              onError={() => setAvatarFailed(true)}
+              onError={() => setAvatarFailed(post.author.avatarUrl)}
             />
           ) : (
             <span className="post-author-placeholder" aria-hidden="true">
@@ -103,7 +111,12 @@ export function PostCard(props: Props) {
             </span>
           )}
           <div>
-            <strong>{post.author.name}</strong>
+            <strong>
+              <span className="post-author-name">{post.author.name}</span>{" "}
+              {post.author.isOfficial && (
+                <span className="host-label comic-label">HOST</span>
+              )}
+            </strong>
             <div className="post-meta">
               {!preview && (
                 <>

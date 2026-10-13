@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     if (draftError) throw draftError;
     await ensureLockedThumbnail(admin, input.draftId, draft.image_path);
     const { data: postId, error: published } = await admin.rpc(
-      "publish_humor_draft",
+      "humor_publish_onboarded",
       {
         image_id: input.draftId,
         owner: user.id,
@@ -65,7 +65,11 @@ export async function POST(request: Request) {
       },
     );
     if (published) throw published;
-    return Response.json({ postId, href: `/post/${postId}` });
+    return Response.json({
+      postId: postId.postId,
+      href: `/post/${postId.postId}`,
+      isFirstPost: postId.isFirstPost,
+    });
   } catch (error) {
     return studioFailure(error);
   }

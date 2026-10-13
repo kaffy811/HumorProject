@@ -1,3 +1,4 @@
+import sharp from "sharp";
 import { postsContext, activePost } from "@/lib/posts-server";
 import { studioFailure, StudioError } from "@/lib/studio-server";
 export async function GET(
@@ -11,7 +12,7 @@ export async function GET(
     const kind = new URL(request.url).searchParams.get("kind") || "image";
     let path: string | null = null,
       bucket = "humor-images";
-    if (kind === "image") {
+    if (kind === "image" || kind === "thumb") {
       const { data, error } = await ctx.admin
         .from("humor_images")
         .select("storage_path")
@@ -30,6 +31,25 @@ export async function GET(
       path = data?.avatar_path || null;
     } else throw new StudioError("Invalid media.", 400);
     if (!path) throw new StudioError("Image not found.", 404);
+    if (kind === "thumb") {
+      const file = await ctx.admin.storage.from(bucket).download(path);
+      if (!file.data) throw new StudioError("Image not found.", 404);
+      const bytes = await sharp(new Uint8Array(await file.data.arrayBuffer()), {
+        animated: false,
+        limitInputPixels: 40_000_000,
+      })
+        .rotate()
+        .resize(128, 128, { fit: "cover" })
+        .webp({ quality: 80 })
+        .toBuffer();
+      return new Response(new Uint8Array(bytes), {
+        headers: {
+          "Content-Type": "image/webp",
+          "Cache-Control": "private, max-age=300",
+          "X-Content-Type-Options": "nosniff",
+        },
+      });
+    }
     const { data, error } = await ctx.admin.storage
       .from(bucket)
       .createSignedUrl(path, 300);
