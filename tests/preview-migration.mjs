@@ -195,6 +195,15 @@ export async function verifyPreviewMigration(db) {
       )
     ).rows[0];
     assert.deepEqual(row, { style: "HANDMADE", source: "handmade" });
+    // Exercise the actual AI/onboarding wrapper too, not only handmade publishing.
+    const aiImage = randomUUID(), generation = randomUUID(), candidate = randomUUID();
+    await db.query("insert into public.humor_images(id,user_id,status,storage_path,locked_thumbnail_path)values($1,$2,'ready',($2::uuid::text||'/local.webp'),'locked.webp')", [aiImage,id]);
+    await db.query("insert into public.humor_drafts(image_id,user_id,image_path,image_mime,byte_count,upload_status,ai_path,image_sha256)values($1,$2,($2::uuid::text||'/local.webp'),'image/webp',10,'ready',($2::uuid::text||'/local.png'),repeat('a',64))", [aiImage,id]);
+    await db.query("insert into public.humor_generations(id,image_id,user_id,provider,model,system_prompt,user_prompt,generation_config,image_path,image_mime,image_sha256,status,caption_candidates)values($1,$2,$3,'google','local-test','local','local','{}',($3::uuid::text||'/local.png'),'image/png',repeat('a',64),'completed',$4)", [generation,aiImage,id,JSON.stringify(['Pun','Roast','Deadpan','Wholesome'].map((style,i)=>({id:i===0?candidate:randomUUID(),text,style})))]);
+    await db.query("insert into public.humor_moderation_checks(user_id,image_id,content_hash,model,allowed)values($1,$2,$3,'local-test',true)", [id,aiImage,createHash('sha256').update(text).digest('hex')]);
+    const aiPost = (await db.query("select public.humor_publish_onboarded($1,$2,$3,$4,$5,$6)p", [aiImage,id,generation,candidate,text,randomUUID()])).rows[0].p;
+    assert.ok(aiPost.postId);
+    assert.equal((await db.query("select style from public.humor_captions where id=$1", [aiPost.postId])).rows[0].style,'Pun');
     await rejected(
       "select public.humor_paged_feed($1,'hot',1,$2)",
       [id, first.snapshotId],

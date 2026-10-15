@@ -51,13 +51,19 @@ export async function readJson(request: Request) {
     throw new StudioError("Invalid request. Try again.");
   }
 }
-export function studioFailure(error: unknown) {
+export function studioFailure(error: unknown, stage?: string) {
   if (error instanceof StudioError)
     return Response.json({ error: error.message }, { status: error.status });
-  console.error(
-    "Studio request failed",
-    error instanceof Error ? error.name : "unknown",
-  );
+  // Database/Storage errors are plain objects, not Error instances. Log only a
+  // machine code and operation; messages/details may contain a user's caption.
+  const code = error && typeof error === "object" && "code" in error
+    ? String(error.code)
+    : "";
+  console.error("Studio request failed", {
+    stage: stage || "request",
+    code: /^[A-Z0-9_]{3,32}$/.test(code) ? code : undefined,
+    name: error instanceof Error ? error.name : "RemoteError",
+  });
   return Response.json(
     { error: "The studio stumbled. Your draft is still here. Try again." },
     { status: 503 },

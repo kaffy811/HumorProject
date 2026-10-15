@@ -12,6 +12,7 @@ import {
 } from "@/lib/studio-server";
 export const maxDuration = 60;
 export async function POST(request: Request) {
+  let stage = "authenticate";
   try {
     const { user, admin } = await studioContext(request);
     const input = await readJson(request);
@@ -37,6 +38,7 @@ export async function POST(request: Request) {
           input.candidateId,
         ),
       );
+    stage = "load-draft";
     const { data: ready, error: readyError } = await admin
       .from("humor_drafts")
       .select("image_path,caption_id,upload_status")
@@ -56,6 +58,7 @@ export async function POST(request: Request) {
       caption_candidates: { id: string }[];
     } | null = null;
     if (input.mode !== "handmade") {
+      stage = "load-generation";
       const { data: foundGeneration, error } = await admin
         .from("humor_generations")
         .select("provider,caption_candidates")
@@ -81,7 +84,9 @@ export async function POST(request: Request) {
       process.env.CAPTION_GENERATION_MODE === "mock" &&
       process.env.VERCEL_ENV !== "production";
     if (!mock) {
+      stage = "moderate";
       const approval = await checkCaptionSafety(input.content.trim());
+      stage = "save-moderation";
       const proof = await admin
         .from("humor_moderation_checks")
         .upsert({
@@ -97,7 +102,9 @@ export async function POST(request: Request) {
       if (proof.error) throw proof.error;
     }
     if (input.mode === "handmade") {
+      stage = "prepare-thumbnail";
       await ensureLockedThumbnail(admin, input.draftId, ready.image_path);
+      stage = "publish-handmade";
       const r = await admin.rpc("publish_humor_handmade", {
         image_id: input.draftId,
         owner: user.id,
@@ -116,6 +123,7 @@ export async function POST(request: Request) {
         postId: input.generationId,
         href: `/post/${input.generationId}`,
       });
+    stage = "reload-draft";
     const { data: draft, error: draftError } = await admin
       .from("humor_drafts")
       .select("image_path")
@@ -123,7 +131,9 @@ export async function POST(request: Request) {
       .eq("user_id", user.id)
       .single();
     if (draftError) throw draftError;
+    stage = "prepare-thumbnail";
     await ensureLockedThumbnail(admin, input.draftId, draft.image_path);
+    stage = "publish-ai";
     const { data: postId, error: published } = await admin.rpc(
       "humor_publish_onboarded",
       {
@@ -142,6 +152,6 @@ export async function POST(request: Request) {
       isFirstPost: postId.isFirstPost,
     });
   } catch (error) {
-    return studioFailure(error);
+    return studioFailure(error, stage);
   }
 }

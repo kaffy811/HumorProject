@@ -42,11 +42,13 @@ export function UserMenu({ author }: { author: Author }) {
         aria-controls="account-menu"
         onClick={() => setOpen(!open)}
       >
+        <span className="avatar-picture">
         {author.avatarUrl ? (
           <img src={author.avatarUrl} alt="" width={38} height={38} />
         ) : (
           <span>{author.name.replace(/^@/, "").slice(0, 1).toUpperCase()}</span>
         )}
+        </span>
         {!!notifications?.unreadCount && (
           <span className="notification-badge" aria-hidden="true">
             {notifications.unreadCount > 9 ? "9+" : notifications.unreadCount}

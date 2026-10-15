@@ -97,7 +97,7 @@ function single(k) {
       ),
     };
   if (p[0] === "notifications-summary")
-    return { unreadCount: 0, latestAt: null };
+    return { unreadCount: 12, latestAt: null };
 }
 const swr = {
   __esModule: true,
@@ -281,6 +281,7 @@ const views = [
   "edit",
   "profile",
   "create",
+  "writing",
   "handmade",
   "detail",
   "notifications",
@@ -312,11 +313,11 @@ for (const view of views) {
   );
   createState = { ...types.initialState, dispatch: noop };
   let element;
-  if (["create", "handmade"].includes(view)) {
-    if (view === "handmade")
+  if (["create", "writing", "handmade"].includes(view)) {
+    if (view !== "create")
       createState = {
         ...createState,
-        writingMode: "handmade",
+        writingMode: view === "handmade" ? "handmade" : "ai",
         step: 2,
         phase: "ready",
         image: {

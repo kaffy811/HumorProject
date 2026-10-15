@@ -138,10 +138,18 @@
   height: 40px;
   border: 2px solid var(--color-ink);
   border-radius: 50%;
-  overflow: hidden;
+  overflow: visible;
   padding: 0;
   background: var(--color-paper);
   font-weight: 900;
+}
+.avatar-picture {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
 }
 .avatar-button img {
   width: 100%;
@@ -1890,3 +1898,12 @@
 .profile-edit-dialog .profile-fields-form :focus-visible {outline:1px solid var(--color-ink);outline-offset:3px;box-shadow:none;}
 
 .create-page {padding-bottom:48px;}
+
+/* Keep the writing controls in document flow at every viewport width. */
+#writing-mode {display:flex;flex-direction:column;align-items:stretch;gap:20px;min-width:0;}
+#writing-mode .feed-sort {margin:0;}
+.direction-field {display:flex;flex-direction:column;gap:10px;min-width:0;}
+.direction-field input {display:block;width:100%;min-width:0;border:2px solid var(--color-ink);border-radius:0;background:var(--color-paper);padding:12px;color:var(--color-ink);}
+#writing-mode > .comic-button {align-self:flex-start;max-width:100%;}
+.member-shell .step-summary:focus-visible {outline:1px solid var(--color-ink);outline-offset:3px;}
+.notification-badge {z-index:1;pointer-events:none;line-height:1;}
