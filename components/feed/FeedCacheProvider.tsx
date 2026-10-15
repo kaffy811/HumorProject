@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useContext, useState, useCallback } from "react";
 import { useAuthorStore } from "@/stores/author-store";
+import Link from "next/link";
 import { SWRConfig } from "swr";
 const Viewer = createContext("");
 const ViewerAuthor = createContext<{ name: string; avatarUrl: string | null }>({
@@ -14,18 +15,18 @@ export function useViewerAuthor() {
   return updated || base;
 }
 const Feedback = createContext<{
-  message: string;
-  notify: (message: string) => void;
+  message: string; href?: string;
+  notify: (message: string, href?:string) => void;
   dismiss: () => void;
 }>({ message: "", notify: () => {}, dismiss: () => {} });
 export function usePostFeedback() {
   return useContext(Feedback);
 }
 export function PostFeedback() {
-  const { message, dismiss } = usePostFeedback();
+  const { message, href, dismiss } = usePostFeedback();
   return message ? (
     <div className="post-feedback" data-post-controls>
-      <span role="status">{message}</span>
+      <span role="status">{message}</span>{href&&<Link href={href} onClick={dismiss}>View</Link>}
       <button onClick={dismiss} aria-label="Dismiss message">
         ×
       </button>
@@ -46,12 +47,13 @@ export function FeedCacheProvider({
 }) {
   const [cache] = useState(() => new Map());
   const [message, setMessage] = useState("");
-  const notify = useCallback((value: string) => setMessage(value), []);
+  const [href,setHref]=useState<string|undefined>();
+  const notify = useCallback((value:string,link?:string)=>{setMessage(value);setHref(link);},[]);
   const dismiss = useCallback(() => setMessage(""), []);
   return (
     <Viewer.Provider value={viewerId}>
       <ViewerAuthor.Provider value={author || { name: "You", avatarUrl: null }}>
-        <Feedback.Provider value={{ message, notify, dismiss }}>
+        <Feedback.Provider value={{ message, href, notify, dismiss }}>
           <SWRConfig
             value={{
               provider: () => cache,

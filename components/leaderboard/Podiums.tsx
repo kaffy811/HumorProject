@@ -9,7 +9,7 @@ export function JokesPodium({ posts }: { posts: RankedPost[] }) {
   const viewer = useFeedViewer(),
     update = usePostCache();
   return (
-    <ol className="leaderboard-podium" aria-label="Top jokes">
+    <ol className={`leaderboard-podium count-${posts.length}`} aria-label="Top jokes">
       {posts.map((post) => (
         <li
           key={post.id}
@@ -33,7 +33,7 @@ export function JokesPodium({ posts }: { posts: RankedPost[] }) {
 }
 export function PeoplePodium({ people }: { people: RankedPerson[] }) {
   return (
-    <ol className="leaderboard-podium people-podium" aria-label="Top people">
+    <ol className={`leaderboard-podium people-podium count-${people.length}`} aria-label="Top people">
       {people.map((person) => (
         <li
           key={person.user.id}
@@ -56,7 +56,7 @@ export function PeoplePodium({ people }: { people: RankedPerson[] }) {
           <p className="person-ha">
             {person.haReceived} <span>Ha</span>
           </p>
-          <p className="comic-label">{person.postCount} posts</p>
+          <p className="comic-label">from {person.postCount} {person.postCount===1?"post":"posts"}</p>
           <Link className="person-best" href={`/post/${person.bestPost.id}`}>
             {person.bestPost.caption}
           </Link>

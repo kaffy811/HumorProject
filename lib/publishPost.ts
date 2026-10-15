@@ -1,6 +1,7 @@
 export interface PublishInput {
   draftId: string;
-  generationId: string;
+  mode?:"ai"|"handmade";
+  generationId: string | null;
   candidateId: string;
   content: string;
   idempotencyKey: string;

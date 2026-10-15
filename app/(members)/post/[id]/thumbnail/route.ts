@@ -1,3 +1,4 @@
+import {storageBucket} from "@/lib/supabase/schema";
 import { publicPost, publicAdmin } from "@/lib/post-public";
 import { mockEnabled } from "@/lib/studio-server";
 import { readFile } from "node:fs/promises";
@@ -14,7 +15,7 @@ export async function GET(
       : await (async () => {
           if (!p.thumbnailPath) return null;
           const { data, error } = await publicAdmin()
-            .storage.from("humor-previews")
+            .storage.from(storageBucket("humor-previews"))
             .download(p.thumbnailPath);
           if (error || !data) return null;
           return Buffer.from(await data.arrayBuffer());

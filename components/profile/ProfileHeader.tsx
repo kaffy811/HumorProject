@@ -35,6 +35,7 @@ export function ProfileHeader({
               <span className="host-label comic-label">HOST</span>
             )}
           </h1>
+          <p className="profile-real-name">{[profile.firstName,profile.lastName].filter(Boolean).join(" ")}</p>
           <p className="profile-joined">
             Joined{" "}
             {new Intl.DateTimeFormat("en-US", {

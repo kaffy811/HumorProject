@@ -1,3 +1,4 @@
+import { dataSchema } from "@/lib/supabase/schema";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { config as supabaseConfig } from "@/lib/supabase/config";
@@ -16,6 +17,7 @@ export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
   const { url, key } = supabaseConfig();
   const db = createServerClient(url, key, {
+    db: { schema: dataSchema() },
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll(values) {

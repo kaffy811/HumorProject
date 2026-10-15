@@ -23,12 +23,28 @@ export function listProfilePosts(id: string, cursor?: string | null) {
   if (cursor) q.set("cursor", cursor);
   return profileRequest<PostPage>(`/api/profiles/${id}/posts?${q}`);
 }
-export function saveProfile(name: string, avatarUploadId?: string) {
+export type ProfileValues = {
+  username: string;
+  firstName: string;
+  lastName: string;
+  avatarAction: "keep" | "remove" | "google" | "upload";
+  avatarUploadId?: string;
+};
+export function saveProfile(values: ProfileValues) {
   return profileRequest<MemberProfile>("/api/profile", {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ displayName: name, avatarUploadId }),
+    body: JSON.stringify(values),
   });
+}
+export async function usernameAvailable(
+  username: string,
+  signal?: AbortSignal,
+) {
+  return profileRequest<{ available: boolean }>(
+    `/api/profile/username?${new URLSearchParams({ username })}`,
+    { signal },
+  );
 }
 export async function stageAvatar(
   file: File,
@@ -48,10 +64,9 @@ export function googleAvatar() {
     { method: "POST" },
   );
 }
-
-export function abandonAvatar(uploadId: string) {
+export function abandonAvatar(id: string) {
   return profileRequest<{ ok: boolean }>(
-    `/api/profile/avatar/preview?id=${uploadId}`,
+    `/api/profile/avatar/preview?id=${id}`,
     { method: "DELETE" },
   );
 }

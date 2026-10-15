@@ -1,3 +1,4 @@
+import { dataSchema } from "@/lib/supabase/schema";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { config } from "@/lib/supabase/config";
@@ -11,6 +12,7 @@ export async function finishAuth(request: NextRequest, mode: "code" | "email") {
   response.headers.set("Cache-Control", "private, no-store");
   const { url, key } = config();
   const db = createServerClient(url, key, {
+    db: { schema: dataSchema() },
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (values) => {

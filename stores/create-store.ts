@@ -31,6 +31,8 @@ export interface CreateState {
   phase: CreatePhase;
   image: DraftImage | null;
   style: JokeStyle;
+  writingMode: "ai" | "handmade";
+  handmadeText: string;
   context: string;
   candidates: CaptionCandidate[];
   retainedCandidate: CaptionCandidate | null;
@@ -51,6 +53,9 @@ export type CreateEvent =
   | { type: "UPLOAD_FAILED"; requestId: string; message: string }
   | { type: "REMOVE_IMAGE" }
   | { type: "SET_STYLE"; style: JokeStyle }
+  | {type:"SET_WRITING_MODE"; mode:"ai"|"handmade"}
+  | {type:"SET_HANDMADE"; text:string}
+  | {type:"PREVIEW_HANDMADE"; id:string}
   | { type: "SET_CONTEXT"; text: string }
   | { type: "OPEN_STEP"; step: CreateStep }
   | { type: "GENERATE_STARTED"; requestId: string }
@@ -75,7 +80,7 @@ export const initialState: CreateState = {
   step: 1,
   phase: "empty",
   image: null,
-  style: "Deadpan",
+  style: "Deadpan", writingMode:"ai", handmadeText:"",
   context: "",
   candidates: [],
   retainedCandidate: null,
@@ -95,7 +100,7 @@ export function selectedCaption(s: CreateState) {
 }
 export function hasUnpublishedContent(s: CreateState) {
   return (
-    !!(s.candidates.length || s.retainedCandidate || s.phase === "generating" || s.phase === "generation-error") && s.phase !== "published"
+    !!(s.handmadeText.trim() || s.candidates.length || s.retainedCandidate || s.phase === "generating" || s.phase === "generation-error") && s.phase !== "published"
   );
 }
 export function reduceCreate(s: CreateState, event: CreateEvent): CreateState {
@@ -137,6 +142,9 @@ export function reduceCreate(s: CreateState, event: CreateEvent): CreateState {
         error: event.message,
         activeRequestId: null,
       };
+    case "SET_WRITING_MODE": return {...s,writingMode:event.mode,step:2};
+    case "SET_HANDMADE": return {...s,handmadeText:truncate(event.text,200)};
+    case "PREVIEW_HANDMADE": {const text=s.handmadeText.trim();if(!text||!s.image?.uploadId)return s;return {...s,step:4,phase:"editing",candidates:[{id:event.id,generationId:null,style:"HANDMADE",text,originalText:text,source:"handmade"}],selectedId:event.id,error:null};}
     case "SET_STYLE":
       return { ...s, style: event.style };
     case "SET_CONTEXT":

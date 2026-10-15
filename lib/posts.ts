@@ -20,13 +20,14 @@ async function read<T>(url: string, init?: RequestInit): Promise<T> {
 export function listPosts({
   sort,
   cursor,
-  limit = 12,
+  limit = 12, page, snapshot,
 }: {
   sort: PostSort;
   cursor?: string | null;
-  limit?: number;
+  limit?: number; page?:number; snapshot?:string|null;
 }) {
   const q = new URLSearchParams({ sort, limit: String(limit) });
+  if(page)q.set("page",String(page)); if(snapshot)q.set("snapshot",snapshot);
   if (cursor) q.set("cursor", cursor);
   return read<PostPage>(`/api/posts?${q}`);
 }
@@ -57,7 +58,7 @@ export function checkPosts(since: string) {
 }
 
 export function toggleSave(postId: string) {
-  return read<{ viewerHasSaved: boolean }>(`/api/posts/${postId}/save`, {
+  return read<{ viewerHasSaved: boolean; showSavedHint?:boolean }>(`/api/posts/${postId}/save`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ requestKey: crypto.randomUUID() }),

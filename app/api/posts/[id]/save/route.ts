@@ -19,7 +19,7 @@ export async function POST(
         mockAction(ctx.user.id, id, "save", input.requestKey),
       );
     await activePost(ctx, id);
-    const { data, error } = await ctx.admin.rpc("toggle_humor_save", {
+    const { data, error } = await ctx.admin.rpc("toggle_humor_save_v2", {
       post_id: id,
       owner: ctx.user.id,
       request_key: input.requestKey,

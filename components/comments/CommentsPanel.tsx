@@ -69,7 +69,7 @@ export function CommentsPanel({
     <section
       ref={panel}
       id="comments"
-      className="comments-panel"
+      className={`comments-panel ${!comments.loading&&!comments.comments.length?"is-empty":""}`}
       aria-labelledby="comments-title"
     >
       <header className="comments-heading">

@@ -15,12 +15,13 @@ type Props =
       imageUrl: string;
       caption: string;
       author: Author;
-      style?: JokeStyle;
+      style?: JokeStyle | "HANDMADE";
       imageWidth?: number;
       imageHeight?: number;
     }
   | {
       preview?: false;
+      rank?:number;
       variant?: "feed" | "detail" | "leaderboard";
       onComment?: () => void;
       onOpen?: () => void;
@@ -95,6 +96,7 @@ export function PostCard(props: Props) {
       className={`comic-card post-card ${preview ? "is-preview" : ""} ${detail ? "is-detail" : ""} ${!preview && props.variant === "leaderboard" ? "is-leaderboard" : ""}`}
     >
       <div className="post-head">
+        {!preview && props.rank && <span className="post-feed-rank comic-label">#{props.rank}</span>}
         <div className="post-author">
           {post.author.avatarUrl && avatarFailed !== post.author.avatarUrl ? (
             <img

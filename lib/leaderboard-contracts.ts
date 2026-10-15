@@ -30,48 +30,7 @@ export interface LeaderboardData {
 export function rankingWindow(value: string | null): RankingWindow {
   return value === "month" || value === "all" ? value : "week";
 }
-// Convert local calendar midnight to UTC using the offset at that midnight,
-// not today's offset (a week can cross the DST change).
-export function windowStart(
-  window: RankingWindow,
-  now = new Date(),
-): string | null {
-  if (window === "all") return null;
-  const fmt = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-  });
-  const parts = Object.fromEntries(
-    fmt.formatToParts(now).map((p) => [p.type, p.value]),
-  );
-  const day = new Date(
-    Date.UTC(
-      Number(parts.year),
-      Number(parts.month) - 1,
-      window === "month" ? 1 : Number(parts.day),
-    ),
-  );
-  if (window === "week")
-    day.setUTCDate(day.getUTCDate() - ((day.getUTCDay() + 6) % 7));
-  let instant = day.getTime();
-  for (let i = 0; i < 3; i++) {
-    const clock = new Intl.DateTimeFormat("en-US", {
-      timeZone: "America/New_York",
-      timeZoneName: "longOffset",
-    })
-      .formatToParts(new Date(instant))
-      .find((p) => p.type === "timeZoneName")!.value;
-    const match = /GMT([+-])(\d{2}):(\d{2})/.exec(clock)!;
-    const offset =
-      (Number(match[2]) * 60 + Number(match[3])) *
-      60000 *
-      (match[1] === "+" ? 1 : -1);
-    instant = day.getTime() - offset;
-  }
-  return new Date(instant).toISOString();
-}
+export function windowStart(window:RankingWindow,now=new Date()):string|null{return window==="all"?null:new Date(now.getTime()-(window==="week"?7:30)*86400000).toISOString();}
 export function rankPosts(
   posts: Post[],
   window: RankingWindow,
@@ -88,7 +47,6 @@ export function rankPosts(
     Date.parse(a.createdAt) - Date.parse(b.createdAt) ||
     a.id.localeCompare(b.id);
   const ranked = eligible
-    .filter((p) => p.haCount > 0)
     .sort(compare)
     .map((p, i) => ({ ...p, rank: i + 1 }));
   const groups = new Map<string, Post[]>();
@@ -104,7 +62,6 @@ export function rankPosts(
         bestPost: { id: best.id, caption: best.caption },
       };
     })
-    .filter((p) => p.haReceived > 0)
     .sort(
       (a, b) =>
         b.haReceived - a.haReceived ||

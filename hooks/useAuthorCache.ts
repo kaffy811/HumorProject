@@ -28,6 +28,7 @@ export function useAuthorCache() {
               return {
                 ...obj,
                 name: profile.name,
+                username: profile.username,
                 avatarUrl: profile.avatarUrl,
                 isOfficial: profile.isOfficial,
               };

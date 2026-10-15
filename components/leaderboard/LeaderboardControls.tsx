@@ -46,8 +46,8 @@ export function LeaderboardControls({
             </button>
           ))}
         </div>
-        {period === "week" && (
-          <span className="comic-label leaderboard-reset">RESETS MONDAY</span>
+        {period !== "all" && (
+          <span className="comic-label leaderboard-reset">{period === "week" ? "LAST 7 DAYS" : "LAST 30 DAYS"}</span>
         )}
       </div>
     </div>

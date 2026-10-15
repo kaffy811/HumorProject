@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Supabase schema is selected at deployment time. */
+import { storageBucket } from "@/lib/supabase/schema";
 import sharp from "sharp";
 import type { SupabaseClient } from "@supabase/supabase-js";
 export async function ensureLockedThumbnail(
-  db: SupabaseClient,
+  db: SupabaseClient<any, "public", "public" | "humor_preview">,
   imageId: string,
   sourcePath: string,
 ) {
@@ -14,7 +16,7 @@ export async function ensureLockedThumbnail(
   if (existing.locked_thumbnail_path)
     return existing.locked_thumbnail_path as string;
   const { data: file, error } = await db.storage
-    .from("humor-images")
+    .from(storageBucket("humor-images"))
     .download(sourcePath);
   if (error || !file) throw error || new Error("Missing image");
   const blurred = await sharp(new Uint8Array(await file.arrayBuffer()), {
@@ -28,7 +30,7 @@ export async function ensureLockedThumbnail(
     .toBuffer();
   const path = `${imageId}/locked.webp`;
   const { error: upload } = await db.storage
-    .from("humor-previews")
+    .from(storageBucket("humor-previews"))
     .upload(path, blurred, { contentType: "image/webp", upsert: true });
   if (upload) throw upload;
   const { error: update } = await db

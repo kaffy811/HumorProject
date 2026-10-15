@@ -58,6 +58,7 @@ export function CaptionCandidates({
                       })
                     }
                   />
+                  <span className="comic-label">{candidate.style}</span>
                   <span className="candidate-count">
                     {200 - characterCount(candidate.text)} characters left
                   </span>
@@ -72,7 +73,7 @@ export function CaptionCandidates({
           <span className="comic-label">The final cut</span>
           <PostCard
             preview
-            style={state.style}
+            style={selected?.style || "Deadpan"}
             imageUrl={state.image!.previewUrl}
             caption={selected?.text || ""}
             author={author}
@@ -80,9 +81,7 @@ export function CaptionCandidates({
         </aside>
       </div>
       <div className="candidate-actions">
-        <ComicButton secondary onClick={generate}>
-          Regenerate
-        </ComicButton>
+        {state.writingMode === "ai" && <ComicButton secondary onClick={generate}>Regenerate</ComicButton>}
         <ComicButton
           disabled={!selected?.text.trim()}
           onClick={() => state.dispatch({ type: "OPEN_STEP", step: 5 })}

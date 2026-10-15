@@ -1,3 +1,4 @@
+import { storageBucket } from "@/lib/supabase/schema";
 /* eslint-disable @next/next/no-img-element */
 import "server-only";
 import { ImageResponse } from "next/og";
@@ -11,14 +12,14 @@ export async function postOg(id: string) {
   const mock = mockEnabled(),
     db = mock ? null : publicAdmin();
   if (db && p.ogPath) {
-    const { data } = await db.storage.from("humor-previews").download(p.ogPath);
+    const { data } = await db.storage.from(storageBucket("humor-previews")).download(p.ogPath);
     if (data) return new Uint8Array(await data.arrayBuffer());
   }
   const source = mock
     ? await readFile(`${process.cwd()}/public${p.imagePath}`)
     : await (async () => {
         const { data, error } = await db!.storage
-          .from("humor-images")
+          .from(storageBucket("humor-images"))
           .download(p.imagePath);
         if (error || !data) throw new Error("Missing image");
         return Buffer.from(await data.arrayBuffer());
@@ -107,7 +108,7 @@ export async function postOg(id: string) {
     if (!active) return null;
     const path = `${id}/og.png`,
       { error } = await db.storage
-        .from("humor-previews")
+        .from(storageBucket("humor-previews"))
         .upload(path, bytes, { contentType: "image/png", upsert: true });
     if (error) throw error;
     const { error: update } = await db

@@ -21,14 +21,14 @@ export type Author = {
 };
 export interface CaptionCandidate {
   id: string;
-  generationId: string;
+  generationId: string | null;
+  style: JokeStyle | "HANDMADE";
   originalText: string;
   text: string;
-  source: "generated" | "retained";
+  source: "generated" | "retained" | "handmade";
 }
 export interface GenerateCaptionsInput {
   uploadId: string;
-  style: JokeStyle;
   context: string;
   requestId: string;
 }

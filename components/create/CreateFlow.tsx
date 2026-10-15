@@ -8,7 +8,9 @@ import { LeaveDraftDialog } from "@/components/ui/LeaveDraftDialog";
 import { ComicButton } from "@/components/ui/ComicButton";
 import { StepPanel } from "./StepPanel";
 import { ImageUpload } from "./ImageUpload";
-import { StylePicker } from "./StylePicker";
+import { WritingMode } from "./WritingMode";
+import { useEffect } from "react";
+import { useReducedMotion } from "framer-motion";
 import { CaptionCandidates } from "./CaptionCandidates";
 import { PublishPanel } from "./PublishPanel";
 import type { Author } from "@/lib/create-contracts";
@@ -21,6 +23,21 @@ export function CreateFlow({
 }) {
   const state = useCreate((s) => s);
   const actions = useCreateController();
+  const reduced = useReducedMotion();
+  useEffect(() => {
+    if (!state.image?.uploadId) return;
+    const raf = requestAnimationFrame(() => {
+      const node = document.getElementById("writing-mode");
+      node?.scrollIntoView({
+        behavior: reduced ? "instant" : "smooth",
+        block: "center",
+      });
+      node
+        ?.querySelector<HTMLButtonElement>("[data-writing-primary]")
+        ?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [state.image?.uploadId, reduced]);
   const guard = useUnsavedDraftGuard();
   const selected = selectedCaption(state);
   const generating = ["generating", "regenerating"].includes(state.phase),
@@ -66,61 +83,69 @@ export function CreateFlow({
         </StepPanel>
         <StepPanel
           number={2}
-          title="Pick your kind of funny"
-          summary={state.style}
+          title="Who gets the mic?"
+          summary={
+            state.writingMode === "ai" ? "Let the baby write" : "I’ll write it"
+          }
           active={state.step === 2}
           enabled={!!state.image?.uploadId && !locked}
           onOpen={open(2)}
         >
-          <StylePicker generate={actions.generate} disabled={locked} />
+          <WritingMode
+            generate={actions.generate}
+            preview={actions.previewHandmade}
+            disabled={locked}
+          />
         </StepPanel>
-        <StepPanel
-          number={3}
-          title="Let the baby think"
-          summary={state.candidates.length ? "Four candidates. One ego." : ""}
-          active={state.step === 3}
-          enabled={
-            !!state.image?.uploadId && !locked && !state.candidates.length
-          }
-          onOpen={open(3)}
-        >
-          {generating ? (
-            <>
-              <p className="generation-status" role="status">
-                Thinking. An unfamiliar experience.
-              </p>
-              {state.retainedCandidate && (
-                <p className="generation-status">
-                  Your edited caption is being kept.
+        {state.writingMode === "ai" && (
+          <StepPanel
+            number={3}
+            title="Let the baby think"
+            summary={state.candidates.length ? "Four candidates. One ego." : ""}
+            active={state.step === 3}
+            enabled={
+              !!state.image?.uploadId && !locked && !state.candidates.length
+            }
+            onOpen={open(3)}
+          >
+            {generating ? (
+              <>
+                <p className="generation-status" role="status">
+                  Thinking. An unfamiliar experience.
                 </p>
-              )}
-              <div className="caption-skeletons" aria-hidden="true">
-                {[0, 1, 2, 3].map((i) => (
-                  <div className="caption-skeleton" key={i}>
-                    <div className="skeleton-line" />
-                    <div className="skeleton-line" />
-                  </div>
-                ))}
-              </div>
-              <ComicButton disabled style={{ marginTop: 18 }}>
-                <span className="loading-mark" aria-hidden="true" />
-                Making it funny…
-              </ComicButton>
-            </>
-          ) : (
-            <>
-              <p className="generation-status">
-                {state.error || "Ready when your photo is."}
-              </p>
-              <ComicButton
-                disabled={!state.image?.uploadId}
-                onClick={actions.generate}
-              >
-                Try again
-              </ComicButton>
-            </>
-          )}
-        </StepPanel>
+                {state.retainedCandidate && (
+                  <p className="generation-status">
+                    Your edited caption is being kept.
+                  </p>
+                )}
+                <div className="caption-skeletons" aria-hidden="true">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div className="caption-skeleton" key={i}>
+                      <div className="skeleton-line" />
+                      <div className="skeleton-line" />
+                    </div>
+                  ))}
+                </div>
+                <ComicButton disabled style={{ marginTop: 18 }}>
+                  <span className="loading-mark" aria-hidden="true" />
+                  Making it funny…
+                </ComicButton>
+              </>
+            ) : (
+              <>
+                <p className="generation-status">
+                  {state.error || "Ready when your photo is."}
+                </p>
+                <ComicButton
+                  disabled={!state.image?.uploadId}
+                  onClick={actions.generate}
+                >
+                  Try again
+                </ComicButton>
+              </>
+            )}
+          </StepPanel>
+        )}
         <StepPanel
           number={4}
           title="Choose the punchline"

@@ -115,7 +115,6 @@ export function PostDetail({ id }: { id: string }) {
                     if (change === null) router.replace("/feed");
                   }}
                 />
-                <KeepGoing id={id} />
               </div>
               <CommentsPanel
                 key={post.id}
@@ -124,6 +123,7 @@ export function PostDetail({ id }: { id: string }) {
                 input={input}
               />
             </div>
+            <KeepGoing id={id}/>
           </>
         )
       )}

@@ -1,3 +1,5 @@
+import { storageBucket } from "@/lib/supabase/schema";
+import { dataSchema } from "@/lib/supabase/schema";
 import "server-only";
 import sharp from "sharp";
 import { createClient } from "@supabase/supabase-js";
@@ -7,7 +9,7 @@ import { profileComplete } from "./profile-complete";
 import { mockEnabled, StudioError } from "./studio-server";
 import { validUuid, validStyle } from "./create-contracts";
 import type { Post, PostPage, PostSort } from "./post-contracts";
-export async function postsContext() {
+export async function postsContext(complete = true) {
   const { db, user } = await memberAuth();
   if (!user) throw new StudioError("Sign in with Google to continue.", 401);
   const { data: profile, error } = await db
@@ -16,7 +18,7 @@ export async function postsContext() {
     .eq("id", user.id)
     .maybeSingle();
   if (error) throw error;
-  if (!profileComplete(profile))
+  if (complete && !profileComplete(profile))
     throw new StudioError("Complete your Profile first.", 403);
   const mock = mockEnabled();
   const secret = mock
@@ -27,6 +29,7 @@ export async function postsContext() {
   return {
     user,
     admin: createClient(config().url, secret, {
+      db: {schema: dataSchema()},
       auth: { persistSession: false, autoRefreshToken: false },
     }),
     mock,
@@ -94,7 +97,7 @@ export async function fetchPostPage(
         height = raw.imageHeight;
       if (!width || !height) {
         const file = await ctx.admin.storage
-          .from("humor-images")
+          .from(storageBucket("humor-images"))
           .download(raw.imagePath);
         if (file.data) {
           try {
@@ -119,7 +122,7 @@ export async function fetchPostPage(
       return {
         id: raw.id,
         caption: raw.caption,
-        style: validStyle(raw.style) ? raw.style : "Deadpan",
+        style: raw.style === "HANDMADE" ? "HANDMADE" : validStyle(raw.style) ? raw.style : "Deadpan",
         createdAt: raw.createdAt,
         imageWidth: width || 800,
         imageHeight: height || 800,

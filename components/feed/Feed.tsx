@@ -1,127 +1,96 @@
 "use client";
-import { useEffect, useRef, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import { useFeed } from "@/hooks/useFeed";
-import { useFeedScroll } from "@/hooks/useFeedScroll";
+import { Suspense, useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import useSWR from "swr";
+import { listPosts } from "@/lib/posts";
 import { useFeedViewer } from "./FeedCacheProvider";
-import { useStores } from "@/stores/StoreProvider";
-import { useMascot } from "@/stores/StoreProvider";
-import type { PostSort } from "@/lib/post-contracts";
-import { FeedSortTabs } from "./FeedSortTabs";
+import { useStores, useMascot } from "@/stores/StoreProvider";
+import { usePostCache } from "@/hooks/usePostCache";
 import { FeedMasonry } from "./FeedMasonry";
 import { FeedSkeleton } from "./FeedSkeleton";
 import { FeedStatus } from "./FeedStatus";
-import { NewPostsNotice } from "./NewPostsNotice";
 import { PostCard } from "@/components/posts/PostCard";
-function Stream({ sort }: { sort: PostSort }) {
-  const stores = useStores();
-  const feed = useFeed(sort),
-    viewerId = useFeedViewer(),
-    setMood = useMascot((s) => s.setMood),
-    sentinel = useRef<HTMLDivElement>(null),
-    pouted = useRef(false),
-    [busy, setBusy] = useState(false),
-    [refreshError, setRefreshError] = useState("");
-  useFeedScroll(sort, feed.pages.length >= feed.size);
-  const { loadMore, ended, loadingMore, error } = feed;
+import { FeedPagination } from "./FeedPagination";
+import { FeedSortTabs } from "./FeedSortTabs";
+function Content() {
+  const q = useSearchParams(),
+    router = useRouter(),
+    viewer = useFeedViewer(),
+    sort = q.get("sort") === "new" ? "new" : "hot",
+    page = /^[1-9]\d*$/.test(q.get("page") || "")
+      ? Math.min(100000, Number(q.get("page")))
+      : 1,
+    patch = usePostCache(),
+    stores = useStores(),
+    setMood = useMascot((s) => s.setMood);
+  const session = useSWR(
+    JSON.stringify(["feed-session", viewer, sort]),
+    () => listPosts({ sort, page: 1, limit: 9 }),
+    { revalidateOnFocus: false, revalidateIfStale: false },
+  );
+  const key = session.data
+    ? JSON.stringify([
+        "feed-page",
+        viewer,
+        sort,
+        page,
+        session.data.snapshotId || session.data.cutoff,
+      ])
+    : null;
+  const swr = useSWR(
+    key,
+    () =>
+      page === 1
+        ? Promise.resolve(session.data!)
+        : listPosts({
+            sort,
+            page,
+            limit: 9,
+            snapshot: session.data?.snapshotId,
+          }),
+    { revalidateOnFocus: false, keepPreviousData: true },
+  );
+  const data = swr.data || (page === 1 ? session.data : undefined),
+    error = swr.error || session.error,
+    restored = useRef(""),
+    end = useRef<HTMLDivElement>(null);
+  const total =
+    data?.totalPages ??
+    Math.max(1, Math.ceil((data?.totalCount ?? data?.posts.length ?? 0) / 9));
   useEffect(() => {
-    const node = sentinel.current;
-    if (!node) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) loadMore();
-      },
-      { rootMargin: "0px 0px 600px 0px" },
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [loadMore, loadingMore, error]);
+    if (!data || !data.posts) return;
+    const back = stores.feed.getState().detailReturn;
+    if (
+      back?.sort === sort &&
+      back.pages === page &&
+      restored.current !== key
+    ) {
+      restored.current = key || "";
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: back.y, behavior: "instant" });
+        stores.feed.getState().consumeDetailReturn();
+      });
+    }
+  }, [data, key, page, sort, stores]);
   useEffect(() => {
-    const node = sentinel.current;
-    if (!node || !ended || !feed.posts.length) return;
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && !pouted.current) {
-        pouted.current = true;
+    const node = end.current;
+    if (!node || page !== total || !data?.posts.length) return;
+    let done = false;
+    const o = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && !done) {
+        done = true;
         setMood("pout");
       }
     });
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [ended, feed.posts.length, setMood]);
-  async function refresh() {
-    setBusy(true);
-    setRefreshError("");
-    try {
-      await feed.refresh();
-      pouted.current = false;
-    } catch (e) {
-      setRefreshError(
-        e instanceof Error ? e.message : "Could not refresh. Try again.",
-      );
-    } finally {
-      setBusy(false);
-    }
+    o.observe(node);
+    return () => o.disconnect();
+  }, [page, total, data?.posts.length, setMood]);
+  function change(n: number) {
+    router.push(`/feed?sort=${sort}&page=${n}`, { scroll: false });
+    document
+      .getElementById("feed-list")
+      ?.scrollIntoView({ behavior: "instant", block: "start" });
   }
-  return (
-    <>
-      <NewPostsNotice count={feed.newCount} busy={busy} onClick={refresh} />
-      {feed.pages[0]?.mode === "mock" && (
-        <p className="comic-label">
-          Preview data · No public votes or posts are changed
-        </p>
-      )}
-      {feed.checkingError && (
-        <p className="feed-small-status" role="status">
-          {feed.checkingError}
-        </p>
-      )}
-      {refreshError && (
-        <FeedStatus kind="error" message={refreshError} onRetry={refresh} />
-      )}{" "}
-      {feed.loading ? (
-        <FeedSkeleton count={6} />
-      ) : (
-        <FeedMasonry>
-          {feed.posts.map((post) => (
-            <div className="feed-masonry-item" key={post.id}>
-              <PostCard
-                post={post}
-                onOpen={() =>
-                  stores.feed
-                    .getState()
-                    .markDetailEntry(
-                      `/feed?sort=${sort}`,
-                      window.scrollY,
-                      feed.size,
-                      sort,
-                    )
-                }
-                viewerId={viewerId}
-                onUpdate={(change) => feed.patch(post, change)}
-              />
-            </div>
-          ))}
-        </FeedMasonry>
-      )}
-      {feed.error && (
-        <FeedStatus
-          kind="error"
-          message={feed.error.message}
-          onRetry={() => void feed.retry()}
-        />
-      )}{" "}
-      {feed.loadingMore && feed.pages.length > 0 && <FeedSkeleton count={3} />}
-      <div ref={sentinel} className="feed-sentinel" aria-hidden="true" />
-      {!feed.loading && !feed.error && !feed.posts.length && (
-        <FeedStatus kind="empty" />
-      )}
-      {feed.ended && feed.posts.length > 0 && <FeedStatus kind="end" />}
-    </>
-  );
-}
-function FeedContent() {
-  const q = useSearchParams(),
-    sort: PostSort = q.get("sort") === "new" ? "new" : "hot";
   return (
     <section className="feed-page">
       <header className="feed-heading">
@@ -129,14 +98,60 @@ function FeedContent() {
         <p>Someone made this instead of doing their homework.</p>
       </header>
       <FeedSortTabs sort={sort} />
-      <Stream key={sort} sort={sort} />
+      {data?.mode === "mock" && (
+        <p className="comic-label">
+          Preview data · No production posts or votes are changed
+        </p>
+      )}
+      <div id="feed-list" className="feed-list-anchor">
+        {!data && !error ? (
+          <FeedSkeleton count={9} />
+        ) : (
+          <FeedMasonry>
+            {data?.posts.map((post, i) => (
+              <div className="feed-grid-item" key={post.id}>
+                <PostCard
+                  post={post}
+                  rank={sort === "hot" ? (page - 1) * 9 + i + 1 : undefined}
+                  viewerId={viewer}
+                  onUpdate={(change) => patch(post, change)}
+                  onOpen={() =>
+                    stores.feed
+                      .getState()
+                      .markDetailEntry(
+                        `/feed?sort=${sort}&page=${page}`,
+                        window.scrollY,
+                        page,
+                        sort,
+                      )
+                  }
+                />
+              </div>
+            ))}
+          </FeedMasonry>
+        )}
+      </div>
+      {error && (
+        <FeedStatus
+          kind="error"
+          message={error.message}
+          onRetry={() => void session.mutate().then(() => swr.mutate())}
+        />
+      )}{" "}
+      {data && !data.posts.length && !error && <FeedStatus kind="empty" />}
+      <FeedPagination page={page} total={total} onPage={change} />
+      <div ref={end}>
+        {data?.posts.length && page === total ? (
+          <FeedStatus kind="end" />
+        ) : null}
+      </div>
     </section>
   );
 }
 export function Feed() {
   return (
-    <Suspense fallback={<FeedSkeleton count={6} />}>
-      <FeedContent />
+    <Suspense fallback={<FeedSkeleton count={9} />}>
+      <Content />
     </Suspense>
   );
 }

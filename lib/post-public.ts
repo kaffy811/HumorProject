@@ -1,3 +1,4 @@
+import { dataSchema } from "@/lib/supabase/schema";
 import "server-only";
 import { cache } from "react";
 import { createClient } from "@supabase/supabase-js";
@@ -10,7 +11,8 @@ export function publicAdmin() {
     process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!key) throw new StudioError("The post is awaiting configuration.", 503);
   return createClient(config().url, key, {
-    auth: { persistSession: false, autoRefreshToken: false },
+    db: {schema: dataSchema()},
+      auth: { persistSession: false, autoRefreshToken: false },
   });
 }
 export const publicPost = cache(async (id: string) => {
@@ -51,17 +53,14 @@ export const publicPost = cache(async (id: string) => {
   if (i.status !== "ready") return null;
   const { data: p, error: pe } = await db
     .from("profiles")
-    .select("first_name,last_name,username,display_name")
+    .select("username")
     .eq("id", i.user_id)
     .maybeSingle();
   if (pe) throw pe;
   return {
     id: c.id,
     caption: c.content,
-    authorName: p?.display_name ||
-      [p?.first_name, p?.last_name].filter(Boolean).join(" ") ||
-      p?.username ||
-      "Member",
+    authorName: `@${p?.username || "member"}`,
     imageId: c.image_id,
     imagePath: i.storage_path,
     thumbnailPath: i.locked_thumbnail_path,

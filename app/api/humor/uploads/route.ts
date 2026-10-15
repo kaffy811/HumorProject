@@ -1,3 +1,4 @@
+import { storageBucket } from "@/lib/supabase/schema";
 import { imageError, IMAGE_MIMES } from "@/lib/create-contracts";
 import {
   readJson,
@@ -35,11 +36,11 @@ export async function POST(request: Request) {
     }
     const path = `${user.id}/${uploadId}.${extension}`;
     const { data: signed, error: signError } = await admin.storage
-      .from("humor-images")
+      .from(storageBucket("humor-images"))
       .createSignedUploadUrl(path, { upsert: false });
     if (signError || !signed) throw signError;
     return Response.json(
-      { draftId: uploadId, uploadId, path, token: signed.token },
+      { draftId: uploadId, uploadId, path, token: signed.token, bucket:storageBucket("humor-images") },
       { headers: { "Cache-Control": "private, no-store" } },
     );
   } catch (error) {

@@ -1,7 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import {
-  hotScore,
+  compareFeed,
   type Post,
   type PostPage,
   type PostSort,
@@ -55,7 +55,8 @@ function session(user: string) {
         ] as Post["style"],
         author: {
           id: i % 5 === 0 ? user : `mock-author-${i % 4}`,
-          name: i % 5 === 0 ? "You" : ["Sam", "Alex", "Morgan", "Jules"][i % 4],
+          username:i%5===0?"you":["sam","alex","morgan","jules"][i%4],
+          name: i % 5 === 0 ? "@you" : ["@sam", "@alex", "@morgan", "@jules"][i % 4],
           avatarUrl: null,
         },
         createdAt: new Date(now - (i + 1) * 3600000).toISOString(),
@@ -95,14 +96,7 @@ export function mockList(
             ? p.author.id === user
             : true,
       )
-      .sort((a, b) =>
-        sort === "saved"
-          ? (s.saves.get(b.id) || 0) - (s.saves.get(a.id) || 0)
-          : sort === "hot"
-            ? hotScore(b.haCount, b.createdAt) -
-              hotScore(a.haCount, a.createdAt)
-            : Date.parse(b.createdAt) - Date.parse(a.createdAt),
-      );
+      .sort((a,b)=>sort==="saved"?(s.saves.get(b.id)||0)-(s.saves.get(a.id)||0)||b.id.localeCompare(a.id):compareFeed(a,b,sort));
     snapshots.set(key, {
       owner: user,
       sort,

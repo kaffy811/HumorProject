@@ -1,3 +1,4 @@
+import {trustedGooglePhoto} from "@/lib/google-avatar";
 import { featureFailure } from "@/lib/member-feature-server";
 import { postsContext } from "@/lib/posts-server";
 import { validUuid } from "@/lib/create-contracts";
@@ -22,7 +23,7 @@ export async function GET(
     });
     if (error) throw error;
     if (!data) throw new StudioError("Person not found.", 404);
-    return Response.json(data, {
+    return Response.json({...data,googlePhotoUrl:id===ctx.user.id?trustedGooglePhoto(ctx.user):null}, {
       headers: { "Cache-Control": "private, no-store" },
     });
   } catch (e) {

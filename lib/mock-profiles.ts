@@ -24,8 +24,9 @@ export function mockProfile(owner: string, id: string): MemberProfile | null {
   if (!author && id !== owner) return null;
   const override = state.humorMockProfiles!.get(`${owner}:${id}`);
   return {
-    ...(author || { id, name: "You", avatarUrl: null }),
+    ...(author || { id, name: "@you", username: "you", avatarUrl: null }),
     username: id === owner ? "you" : "member",
+    firstName:"Local", lastName:"Member",
     joinedAt: "2026-10-01T12:00:00Z",
     onboardedAt: new Date().toISOString(),
     ...override,
@@ -36,13 +37,14 @@ export function mockProfile(owner: string, id: string): MemberProfile | null {
         ?.rank ?? null,
   };
 }
-export function mockSaveProfile(owner: string, name: string, upload?: string) {
+export function mockSaveProfile(owner: string, fields: {username:string;first_name:string;last_name:string}, upload?: string, action?:string) {
   const value = mockProfile(owner, owner)!;
   if (upload && !mockAvatar(owner, upload))
     throw Error("Avatar preview expired.");
   const updated = {
     ...value,
-    name,
+    name: `@${fields.username}`,username:fields.username,firstName:fields.first_name,lastName:fields.last_name,
+    ...(action === "remove" ? {avatarUrl:null} : {}),
     ...(upload
       ? { avatarUrl: `/api/profile/avatar/preview?id=${upload}` }
       : {}),

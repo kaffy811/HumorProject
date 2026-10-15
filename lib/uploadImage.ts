@@ -28,7 +28,7 @@ export async function uploadImage(
   );
   if (signal.aborted) throw new DOMException("Aborted", "AbortError");
   const { error: uploadError } = await createClient()
-    .storage.from("humor-images")
+    .storage.from(prepared.bucket)
     .uploadToSignedUrl(prepared.path, prepared.token, file, {
       contentType: file.type,
     });

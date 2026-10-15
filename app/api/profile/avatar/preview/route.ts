@@ -1,3 +1,4 @@
+import { storageBucket } from "@/lib/supabase/schema";
 import { mockAvatar, mockAbandonAvatar } from "@/lib/mock-profiles";
 import { featureFailure } from "@/lib/member-feature-server";
 import { postsContext } from "@/lib/posts-server";
@@ -9,7 +10,7 @@ import { validUuid } from "@/lib/create-contracts";
 export async function POST(request: Request) {
   try {
     if (!sameOrigin(request)) throw new StudioError("Invalid origin.", 403);
-    const ctx = await postsContext();
+    const ctx = await postsContext(false);
     if (
       Number(request.headers.get("content-length")) >
       MAX_AVATAR_BYTES + 100000
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
 }
 export async function GET(request: Request) {
   try {
-    const ctx = await postsContext(),
+    const ctx = await postsContext(false),
       id = new URL(request.url).searchParams.get("id");
     if (!validUuid(id)) throw new StudioError("Preview not found.", 404);
     if (ctx.mock) {
@@ -58,7 +59,7 @@ export async function GET(request: Request) {
       .maybeSingle();
     if (!data) throw new StudioError("Preview expired.", 404);
     const file = await ctx.admin.storage
-      .from("humor-avatars")
+      .from(storageBucket("humor-avatars"))
       .download(data.storage_path);
     if (!file.data) throw new StudioError("Preview expired.", 404);
     return new Response(file.data, {
@@ -75,7 +76,7 @@ export async function GET(request: Request) {
 export async function DELETE(request: Request) {
   try {
     if (!sameOrigin(request)) throw new StudioError("Invalid origin.", 403);
-    const ctx = await postsContext(),
+    const ctx = await postsContext(false),
       id = new URL(request.url).searchParams.get("id");
     if (!validUuid(id)) throw new StudioError("Invalid preview.");
     if (ctx.mock) {
@@ -88,7 +89,7 @@ export async function DELETE(request: Request) {
     });
     if (result.error) throw result.error;
     if (result.data)
-      await ctx.admin.storage.from("humor-avatars").remove([result.data]);
+      await ctx.admin.storage.from(storageBucket("humor-avatars")).remove([result.data]);
     return Response.json({ ok: true });
   } catch (e) {
     return featureFailure(e);

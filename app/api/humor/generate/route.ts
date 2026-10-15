@@ -1,7 +1,7 @@
+import { storageBucket } from "@/lib/supabase/schema";
 import { randomUUID } from "node:crypto";
 import {
   characterCount,
-  validStyle,
   validUuid,
   type CaptionCandidate,
 } from "@/lib/create-contracts";
@@ -31,13 +31,12 @@ export async function POST(request: Request) {
       !input ||
       !validUuid(input.uploadId) ||
       !validUuid(input.requestId) ||
-      !validStyle(input.style) ||
       typeof input.context !== "string" ||
       characterCount(input.context) > 120 ||
       /[\u0000-\u0008]/.test(input.context)
     )
       throw new StudioError(
-        "Choose a style and keep your direction under 120 characters.",
+        "Keep your direction under 120 characters.",
       );
     if (process.env.AI_ENABLED === "false")
       throw new StudioError(
@@ -64,7 +63,7 @@ export async function POST(request: Request) {
         "This draft has already been posted. Start a new one.",
         409,
       );
-    const prompt = captionPrompt(input.style, input.context);
+    const prompt = captionPrompt(input.context);
     const model = mock ? "demo-captions-v1" : geminiSettings().model;
     const { data: id, error: reservation } = await admin.rpc(
       "reserve_humor_generation",
@@ -77,7 +76,7 @@ export async function POST(request: Request) {
         system_text: SYSTEM_PROMPT,
         user_text: prompt,
         settings: GENERATION_CONFIG,
-        joke_style: input.style,
+        joke_style: "AUTO",
         extra_context: input.context,
       },
     );
@@ -117,18 +116,13 @@ export async function POST(request: Request) {
         409,
       );
     const { data: file, error: download } = await admin.storage
-      .from("humor-images")
+      .from(storageBucket("humor-images"))
       .download(draft.ai_path);
     if (download || !file) throw download;
     const result = mock
       ? {
           description: "Local demo image.",
-          captions: [
-            "A photo with the confidence of a group project leader.",
-            "My camera roll has better attendance than I do.",
-            "A small moment. An unnecessarily large personality.",
-            "Proof that a picture is worth at least four mediocre jokes.",
-          ],
+          captions: [{caption:"A photo with the confidence of a group project leader.",style:"Deadpan" as const},{caption:"My camera roll has better attendance than I do.",style:"Roast" as const},{caption:"A small moment. An unnecessarily large personality.",style:"Absurd" as const},{caption:"Proof that a picture is worth at least four mediocre jokes.",style:"Wholesome" as const}],
           usage: {},
         }
       : await generateCaptions(
@@ -136,7 +130,8 @@ export async function POST(request: Request) {
           "image/png",
           prompt,
         );
-    const candidates: CaptionCandidate[] = result.captions.map((text) => ({
+    const candidates: CaptionCandidate[] = result.captions.map(({caption:text,style}) => ({
+      style,
       id: randomUUID(),
       generationId: id,
       originalText: text,

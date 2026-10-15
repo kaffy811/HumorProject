@@ -1,3 +1,4 @@
+import { storageBucket } from "@/lib/supabase/schema";
 import "server-only";
 import { mockStageAvatar } from "./mock-profiles";
 import { randomUUID } from "node:crypto";
@@ -42,14 +43,14 @@ export async function stageProfileAvatar(
     return { uploadId: id, avatarUrl: `/api/profile/avatar/preview?id=${id}` };
   }
   const upload = await ctx.admin.storage
-    .from("humor-avatars")
+    .from(storageBucket("humor-avatars"))
     .upload(path, compressed, { contentType: "image/webp" });
   if (upload.error) throw upload.error;
   const row = await ctx.admin
     .from("humor_avatar_uploads")
     .insert({ id, user_id: ctx.user.id, storage_path: path });
   if (row.error) {
-    await ctx.admin.storage.from("humor-avatars").remove([path]);
+    await ctx.admin.storage.from(storageBucket("humor-avatars")).remove([path]);
     throw row.error;
   }
   return { uploadId: id, avatarUrl: `/api/profile/avatar/preview?id=${id}` };

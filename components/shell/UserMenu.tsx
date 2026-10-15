@@ -58,10 +58,11 @@ export function UserMenu({ author }: { author: Author }) {
           <Link href="/notifications" onClick={() => setOpen(false)}>
             Notifications
           </Link>
-          <span className="comic-label">{author.username}</span>
+          <span className="comic-label">@{author.username}</span>
           <Link href="/me" onClick={() => setOpen(false)}>
             My posts
           </Link>
+          <Link href="/me?tab=saved" onClick={() => setOpen(false)}>Saved</Link>
           <Link href="/me?edit=1" onClick={() => setOpen(false)}>
             Edit profile
           </Link>

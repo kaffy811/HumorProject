@@ -1,3 +1,4 @@
+import { storageBucket } from "@/lib/supabase/schema";
 import { postsContext } from "@/lib/posts-server";
 import { activeComment, commentFailure } from "@/lib/comments-server";
 import { StudioError } from "@/lib/studio-server";
@@ -17,7 +18,7 @@ export async function GET(
     if (error) throw error;
     if (!p?.avatar_path) throw new StudioError("Image not found.", 404);
     const { data, error: se } = await ctx.admin.storage
-      .from("humor-avatars")
+      .from(storageBucket("humor-avatars"))
       .createSignedUrl(p.avatar_path, 300);
     if (se) throw se;
     return new Response(null, {

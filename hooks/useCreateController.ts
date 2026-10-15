@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef } from "react";
-import { useSWRConfig } from "swr";
+import { useContentCache } from "./useContentCache";
+import {getPost} from "@/lib/comments";
 import { useFeedViewer } from "@/components/feed/FeedCacheProvider";
 import { useRouter } from "next/navigation";
 import { useStores } from "@/stores/StoreProvider";
@@ -12,7 +13,7 @@ import { publishPost } from "@/lib/publishPost";
 export function useCreateController() {
   const { create, mascot } = useStores();
   const router = useRouter();
-  const { mutate } = useSWRConfig();
+  const refreshContent = useContentCache();
   const viewer = useFeedViewer();
   const file = useRef<File | null>(null);
   const active = useRef<AbortController | null>(null);
@@ -94,7 +95,6 @@ export function useCreateController() {
       const result = await generateCaptions(
         {
           uploadId: s.image.uploadId,
-          style: s.style,
           context: s.context,
           requestId,
         },
@@ -136,6 +136,7 @@ export function useCreateController() {
     try {
       const result = await publishPost(
         {
+          mode: s.writingMode,
           draftId: s.draftId,
           generationId: selected.generationId,
           candidateId: selected.id,
@@ -147,21 +148,8 @@ export function useCreateController() {
       if (controller.signal.aborted) return;
       dispatch({ type: "PUBLISH_SUCCEEDED", requestId, postId: result.postId });
       mascot.getState().setMood("heart");
-      void mutate(
-        (key) => {
-          try {
-            const parsed = JSON.parse(String(key));
-            return (
-              parsed[1] === viewer &&
-              ["profile", "profile-posts"].includes(parsed[0])
-            );
-          } catch {
-            return false;
-          }
-        },
-        undefined,
-        { revalidate: true },
-      ).catch(() => {});
+      const posted=await getPost(result.postId).catch(()=>null);
+      await refreshContent(posted||undefined); router.refresh();
       redirectTimer.current = setTimeout(() => router.push(result.href), 1500);
     } catch (error) {
       if (controller.signal.aborted) return;
@@ -175,10 +163,11 @@ export function useCreateController() {
       });
       mascot.getState().setMood("cry");
     }
-  }, [create, dispatch, mascot, router, mutate, viewer]);
+  }, [create, dispatch, mascot, router, refreshContent, viewer]);
   return {
     selectFile,
     generate,
+    previewHandmade:()=>dispatch({type:"PREVIEW_HANDMADE",id:crypto.randomUUID()}),
     publish,
     retryUpload: () => file.current && selectFile(file.current),
     removeImage: () => {

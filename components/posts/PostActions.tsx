@@ -48,9 +48,9 @@ export function PostActions({
             }
           : { viewerHasSaved: !post.viewerHasSaved },
       );
-      await onUpdate(
-        await (kind === "ha" ? toggleHa(post.id) : toggleSave(post.id)),
-      );
+      const result=await (kind === "ha" ? toggleHa(post.id) : toggleSave(post.id));
+      await onUpdate(result);
+      if("showSavedHint" in result && result.showSavedHint)notify("Saved. Find it under your avatar → Saved.","/me?tab=saved");
     } catch (e) {
       await onUpdate(previous);
       notify(

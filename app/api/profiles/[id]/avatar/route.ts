@@ -1,3 +1,4 @@
+import { storageBucket } from "@/lib/supabase/schema";
 import { featureFailure } from "@/lib/member-feature-server";
 import { postsContext } from "@/lib/posts-server";
 import { validUuid } from "@/lib/create-contracts";
@@ -18,7 +19,7 @@ export async function GET(
     if (error) throw error;
     if (!data?.avatar_path) throw new StudioError("Photo not found.", 404);
     const file = await ctx.admin.storage
-      .from("humor-avatars")
+      .from(storageBucket("humor-avatars"))
       .download(data.avatar_path);
     if (file.error || !file.data)
       throw new StudioError("Photo not found.", 404);

@@ -1,3 +1,4 @@
+import { dataSchema } from "@/lib/supabase/schema";
 import "server-only";
 import { createClient as createAdmin } from "@supabase/supabase-js";
 import { config } from "@/lib/supabase/config";
@@ -25,7 +26,7 @@ export async function studioContext(request: Request) {
     throw new StudioError("Your profile could not be loaded. Try again.", 503);
   if (!profileComplete(profile))
     throw new StudioError(
-      "Finish your name, username and photo in Profile first.",
+      "Finish your name and username in Profile first.",
       403,
     );
   const secret =
@@ -33,7 +34,8 @@ export async function studioContext(request: Request) {
   if (!secret)
     throw new StudioError("The studio is awaiting server configuration.", 503);
   const admin = createAdmin(config().url, secret, {
-    auth: { persistSession: false, autoRefreshToken: false },
+    db: {schema: dataSchema()},
+      auth: { persistSession: false, autoRefreshToken: false },
   });
   return { db, user, admin };
 }

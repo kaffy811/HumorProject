@@ -1,5 +1,7 @@
 "use client";
 import { patchProfileCounts, type CachedProfile } from "@/lib/profile-cache";
+import {useContentCache} from "./useContentCache";
+import {useRouter} from "next/navigation";
 import { useCallback } from "react";
 import { useSWRConfig } from "swr";
 import { useFeedViewer } from "@/components/feed/FeedCacheProvider";
@@ -11,7 +13,7 @@ import {
 import type { Post, PostPage } from "@/lib/post-contracts";
 export function usePostCache() {
   const { cache, mutate } = useSWRConfig(),
-    viewer = useFeedViewer();
+    viewer = useFeedViewer(), refresh=useContentCache(), router=useRouter();
   return useCallback(
     async (post: Post, change: Partial<Post> | null) => {
       await Promise.all(
@@ -56,7 +58,7 @@ export function usePostCache() {
           if (
             parsed[0] === "posts" ||
             parsed[0] === "recommendations" ||
-            parsed[0] === "profile-posts"
+            parsed[0] === "profile-posts" || parsed[0] === "feed-page" || parsed[0] === "feed-session"
           )
             await mutate(
               key,
@@ -77,7 +79,8 @@ export function usePostCache() {
             );
         }),
       );
+      if(change===null){await refresh();router.refresh();}
     },
-    [cache, mutate, viewer],
+    [cache, mutate, viewer, refresh, router],
   );
 }

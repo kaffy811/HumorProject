@@ -1,3 +1,4 @@
+import { storageBucket } from "@/lib/supabase/schema";
 import sharp from "sharp";
 import { randomUUID } from "node:crypto";
 import { memberAuth } from "@/lib/member-auth";
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
     .webp({ quality: 88 })
     .toBuffer();
   const path = `${user.id}/${randomUUID()}.webp`;
-  const bucket = db.storage.from("humor-avatars");
+  const bucket = db.storage.from(storageBucket("humor-avatars"));
   const { error: upload } = await bucket.upload(path, compressed, {
     contentType: "image/webp",
     upsert: false,

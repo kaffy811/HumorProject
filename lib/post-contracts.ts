@@ -5,8 +5,8 @@ export interface Post {
   imageWidth: number;
   imageHeight: number;
   caption: string;
-  style: JokeStyle;
-  author: { id: string; name: string; avatarUrl: string | null; isOfficial?: boolean };
+  style: JokeStyle | "HANDMADE";
+  author: { username?: string; id: string; name: string; avatarUrl: string | null; isOfficial?: boolean };
   createdAt: string;
   haCount: number;
   commentCount: number;
@@ -20,6 +20,7 @@ export interface PostPage {
   nextCursor: string | null;
   cutoff: string;
   mode: "live" | "mock";
+  page?: number; totalCount?: number; totalPages?: number; snapshotId?: string;
 }
 export const REPORT_REASONS = [
   "Spam",
@@ -27,12 +28,8 @@ export const REPORT_REASONS = [
   "Inappropriate content",
   "Other",
 ] as const;
-export function hotScore(count: number, createdAt: string, now = Date.now()) {
-  return (
-    count /
-    Math.pow(Math.max(0, (now - Date.parse(createdAt)) / 3600000) + 2, 1.5)
-  );
-}
+export function hotScore(count:number){return count;}
+export function compareFeed(a:Post,b:Post,sort:PostSort){return (sort==="hot"?b.haCount-a.haCount:0)||Date.parse(b.createdAt)-Date.parse(a.createdAt)||b.id.localeCompare(a.id);}
 export function imageRatio(width: number, height: number) {
   return Math.max(0.8, width / height);
 }

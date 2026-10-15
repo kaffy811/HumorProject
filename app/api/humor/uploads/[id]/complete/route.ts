@@ -1,3 +1,4 @@
+import { storageBucket } from "@/lib/supabase/schema";
 import { prepareImage } from "@/lib/media/prepare-image";
 import { createHash } from "node:crypto";
 import sharp from "sharp";
@@ -24,7 +25,7 @@ export async function POST(
     if (draft.upload_status === "ready")
       return Response.json({ draftId: id, uploadId: id });
     const { data: file, error: download } = await admin.storage
-      .from("humor-images")
+      .from(storageBucket("humor-images"))
       .download(draft.image_path);
     if (download || !file)
       throw new StudioError("Upload did not finish. Try again.");
@@ -78,7 +79,7 @@ export async function POST(
       .toBuffer();
     const aiPath = `${user.id}/${id}-ai.png`;
     const { error: upload } = await admin.storage
-      .from("humor-images")
+      .from(storageBucket("humor-images"))
       .upload(aiPath, normalized, { contentType: "image/png", upsert: true });
     if (upload) throw upload;
     let displayPath = draft.image_path;
@@ -86,7 +87,7 @@ export async function POST(
       const display = await prepareImage(bytes);
       displayPath = `${user.id}/${id}-display.webp`;
       const source = await admin.storage
-        .from("humor-images")
+        .from(storageBucket("humor-images"))
         .upload(displayPath, display.bytes, {
           contentType: display.mime,
           upsert: true,
@@ -111,7 +112,7 @@ export async function POST(
       .eq("user_id", user.id);
     if (saved) throw saved;
     if (displayPath !== draft.image_path)
-      await admin.storage.from("humor-images").remove([draft.image_path]);
+      await admin.storage.from(storageBucket("humor-images")).remove([draft.image_path]);
     return Response.json({ draftId: id, uploadId: id });
   } catch (error) {
     return studioFailure(error);

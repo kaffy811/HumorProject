@@ -10,7 +10,6 @@ export function profileComplete(profile: Profile | null) {
   return !!(
     profile?.first_name?.trim() &&
     profile?.last_name?.trim() &&
-    profile?.username?.trim() &&
-    profile?.avatar_path
+    profile?.username?.trim()
   );
 }
