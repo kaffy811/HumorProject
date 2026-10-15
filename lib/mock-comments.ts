@@ -72,6 +72,12 @@ function session(user: string, postId?: string) {
 function visible(s: Session, id: string) {
   return s.comments.filter((c) => c.postId === id && !s.deleted.has(c.id));
 }
+export function mockCommentGet(user: string, postId: string, id: string) {
+  const s = session(user,postId);
+  const row = visible(s,postId).find(c => c.id === id);
+  if (!row) throw new StudioError("Comment not found.",404);
+  return {...row,replyTo: row.replyTo && s.deleted.has(row.replyTo.id) ? {...row.replyTo,authorName:"deleted",authorId:null} : row.replyTo};
+}
 export function mockCommentsList(
   user: string,
   postId: string,

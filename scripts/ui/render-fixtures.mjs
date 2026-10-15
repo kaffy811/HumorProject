@@ -14,6 +14,7 @@ await mkdir(out, { recursive: true });
 const modules = new Map();
 let query = new URLSearchParams(),
   section = "feed";
+let menuOpen = false, menuStateOrdinal = 0;
 const viewer = "00000000-0000-4000-8000-000000000001";
 const noop = () => {};
 const posts = Array.from({ length: 9 }, (_, i) => ({
@@ -52,6 +53,11 @@ const profile = {
   haReceived: 45,
   bestRank: 1,
 };
+const fixtureComments = [
+  {id:"fixture-parent",postId:posts[0].id,body:"Absolutely. This is my entire contribution to the group project.",author:posts[1].author,createdAt:"2026-10-15T12:00:00Z",haCount:1,viewerHasHa:false,replyTo:null},
+  {id:"fixture-reply",postId:posts[0].id,body:"Finally. A peer review I can afford.",author:posts[0].author,createdAt:"2026-10-15T12:05:00Z",haCount:20,viewerHasHa:false,replyTo:{id:"fixture-parent",authorName:posts[1].author.name,authorId:posts[1].author.id}},
+];
+posts[0].commentCount = fixtureComments.length;
 const page = {
   posts,
   nextCursor: null,
@@ -117,7 +123,7 @@ const infinite = {
     const p = JSON.parse(getKey(0, null));
     const data =
       p[0] === "comments"
-        ? { comments: [], nextCursor: null, commentCount: 0 }
+        ? { comments: fixtureComments, nextCursor: null, commentCount: 2 }
         : p[0] === "notifications"
           ? {
               items: [],
@@ -197,10 +203,12 @@ function load(file) {
     "require",
     ts.transpile(readFileSync(file, "utf8"), {
       module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2022,
       jsx: ts.JsxEmit.ReactJSX,
       esModuleInterop: true,
     }),
   )(m, m.exports, (id) => {
+    if (id === "react" && file.endsWith("/UserMenu.tsx")) return {...React,useState: initial => React.useState(menuOpen && menuStateOrdinal++ === 0 ? true : initial)};
     if (id === "server-only") return {};
     if (id === "swr") return swr;
     if (id === "swr/infinite") return infinite;
@@ -274,6 +282,7 @@ await writeFile(path.join(out, "styles.css"), css);
 await cp("public/baby", path.join(out, "baby"), { recursive: true });
 const views = [
   "feed",
+  "notification-menu",
   "top",
   "people",
   "me",
@@ -292,6 +301,7 @@ const views = [
   "top-2",
 ];
 for (const view of views) {
+  menuOpen = view === "notification-menu";menuStateOrdinal=0;
   section =
     view === "people"
       ? "top"

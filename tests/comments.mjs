@@ -6,6 +6,7 @@ const require = createRequire(import.meta.url);
 function load(file, deps = {}) {
   const code = ts.transpile(readFileSync(file, "utf8"), {
     module: ts.ModuleKind.CommonJS,
+    target: ts.ScriptTarget.ES2022,
   });
   const m = { exports: {} };
   new Function("module", "exports", "require", code)(m, m.exports, (id) =>
@@ -29,6 +30,26 @@ for (const value of [
 assert.equal(safeReturnPath("/post/123#comments"), "/post/123#comments");
 const contract = load("lib/comment-contracts.ts"),
   post = load("lib/post-contracts.ts");
+const {commentThreads,commentAncestors} = load("lib/comment-threads.ts", {"./comment-contracts":contract});
+const threadComment = (id,reply=null,ha=0,at=1) => ({id,postId:"thread-post",body:id,author:{id:"author",name:"@author",avatarUrl:null},createdAt:new Date(at*1000).toISOString(),haCount:ha,viewerHasHa:false,replyTo:reply?{id:reply,authorName:"@parent"}:null});
+const parent = threadComment("parent",null,1), child = threadComment("child","parent",100,3), peer=threadComment("peer",null,5,2), grandchild=threadComment("grandchild","child",0,4);
+let threads=commentThreads([child,grandchild,peer,parent],"top",new Set());
+assert.deepEqual(threads.map(t=>t.comment.id),["peer","parent"]);
+assert.equal(threads[1].replies[0].comment.id,"child");
+assert.equal(threads[1].replies[0].replies[0].comment.id,"grandchild");
+threads=commentThreads([peer,child,parent],"top",new Set(["child"]));
+assert.equal(threads[0].comment.id,"parent");assert.equal(threads[0].replies[0].comment.id,"child");
+assert.equal(commentThreads([child],"new",new Set())[0].comment.id,"child");
+assert.equal(commentThreads([threadComment("a","b"),threadComment("b","a")],"new",new Set()).length,2);
+assert.equal(commentThreads([threadComment("a","a")],"new",new Set()).length,1);
+assert.equal(commentThreads([parent,{...child,postId:"other"}],"top",new Set()).length,2);
+const ancestorRequests=[];
+const ancestors=await commentAncestors([grandchild],"thread-post",async id=>{ancestorRequests.push(id);return [parent,child].find(c=>c.id===id)||null;});
+assert.deepEqual(ancestors.map(c=>c.id),["child","parent"]);
+assert.deepEqual(ancestorRequests,["child","parent"]);
+assert.deepEqual(await commentAncestors([child],"thread-post",async()=>({...parent,postId:"another-post"})),[]);
+assert.deepEqual(await commentAncestors([{...child,replyTo:{id:"parent",authorName:"deleted"}}],"thread-post",async()=>assert.fail("Deleted parents must not be fetched")),[]);
+console.log("PASS replies stay under their parent in Top/New, highlighted replies promote conversations, missing ancestors load once, deleted/cyclic/cross-post replies remain safe");
 assert.equal(contract.validateComment(" \n "), false);
 assert.equal(contract.validateComment("🙂".repeat(280)), true);
 assert.equal(contract.validateComment("🙂".repeat(281)), false);

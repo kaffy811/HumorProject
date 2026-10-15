@@ -57,8 +57,12 @@ export function UserMenu({ author }: { author: Author }) {
       </button>
       {open && (
         <div id="account-menu" className="account-dropdown">
-          <Link href="/notifications" onClick={() => setOpen(false)}>
-            Notifications
+          <Link href="/notifications" className="account-notifications" onClick={() => setOpen(false)}>
+            <span>Notifications</span>
+            {!!notifications?.unreadCount && <>
+              <span className="notification-menu-dot" aria-hidden="true" />
+              <span className="sr-only">{notifications.unreadCount} unread notifications</span>
+            </>}
           </Link>
           <span className="comic-label">@{author.username}</span>
           <Link href="/me" onClick={() => setOpen(false)}>

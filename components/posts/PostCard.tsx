@@ -5,7 +5,7 @@ import { usePublicAuthor } from "@/stores/author-store";
 import { useFeedViewer } from "@/components/feed/FeedCacheProvider";
 import { useEffect, useRef, useState } from "react";
 import type { Author, JokeStyle } from "@/lib/create-contracts";
-import { imageRatio, relativeTime, type Post } from "@/lib/post-contracts";
+import { relativeTime, type Post } from "@/lib/post-contracts";
 import { PostActions } from "./PostActions";
 import { PostShare } from "./PostShare";
 import { PostMenu } from "./PostMenu";
@@ -79,15 +79,6 @@ export function PostCard(props: Props) {
       height={post.imageHeight}
       loading={preview ? "eager" : "lazy"}
       onError={() => setFailed(true)}
-      onLoad={(e) => {
-        if (preview)
-          e.currentTarget.parentElement!.style.aspectRatio = String(
-            imageRatio(
-              e.currentTarget.naturalWidth,
-              e.currentTarget.naturalHeight,
-            ),
-          );
-      }}
     />
   );
   return (
@@ -119,20 +110,14 @@ export function PostCard(props: Props) {
                 <span className="host-label comic-label">HOST</span>
               )}
             </strong>
-            <div className="post-meta">
-              {!preview && (
-                <>
+            {!preview && <div className="post-meta">
                   <time
                     dateTime={post.createdAt}
                     title={new Date(post.createdAt).toLocaleString()}
                   >
                     {relativeTime(post.createdAt, clock)}
                   </time>
-                  <span aria-hidden="true">·</span>
-                </>
-              )}
-              <span className="post-style comic-label">{post.style}</span>
-            </div>
+            </div>}
           </div>
         </div>
         {!preview && <PostShare id={post.id} card={card} />}
@@ -160,7 +145,7 @@ export function PostCard(props: Props) {
         style={{
           aspectRatio: detail
             ? post.imageWidth / post.imageHeight
-            : imageRatio(post.imageWidth, post.imageHeight),
+            : 1,
           ...(detail
             ? { maxWidth: `${(70 * post.imageWidth) / post.imageHeight}vh` }
             : {}),

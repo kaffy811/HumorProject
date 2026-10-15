@@ -58,7 +58,6 @@ export function CaptionCandidates({
                       })
                     }
                   />
-                  <span className="comic-label">{candidate.style}</span>
                   <span className="candidate-count">
                     {200 - characterCount(candidate.text)} characters left
                   </span>

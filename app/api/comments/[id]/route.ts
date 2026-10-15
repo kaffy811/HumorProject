@@ -3,7 +3,7 @@ import { sameOrigin } from "@/lib/humor-validation";
 import { validUuid } from "@/lib/create-contracts";
 import { StudioError } from "@/lib/studio-server";
 import { commentFailure } from "@/lib/comments-server";
-import { mockCommentAction } from "@/lib/mock-comments";
+import { mockCommentAction, mockCommentGet } from "@/lib/mock-comments";
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -34,6 +34,7 @@ export async function GET(
     const ctx = await postsContext(),
       { id } = await params,
       post = new URL(request.url).searchParams.get("postId");
+    if (ctx.mock && post) return Response.json(mockCommentGet(ctx.user.id,post,id));
     if (!validUuid(id) || !validUuid(post))
       throw new StudioError("Comment not found.", 404);
     const { data: row, error } = await ctx.admin

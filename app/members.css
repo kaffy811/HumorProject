@@ -1907,3 +1907,25 @@
 #writing-mode > .comic-button {align-self:flex-start;max-width:100%;}
 .member-shell .step-summary:focus-visible {outline:1px solid var(--color-ink);outline-offset:3px;}
 .notification-badge {z-index:1;pointer-events:none;line-height:1;}
+
+/* Quiet post metadata and a consistent reading rhythm across each grid row. */
+.post-head {padding:16px;gap:10px;}
+.member-shell .post-author strong {font-size:13px;line-height:1.4;}
+.post-author time {font-size:11px;letter-spacing:0;margin-top:3px;}
+.post-card:not(.is-detail):not(.is-preview):not(.is-leaderboard) .post-caption-link {padding:0;}
+.member-shell .post-card:not(.is-detail):not(.is-preview):not(.is-leaderboard) .post-caption {padding:0;margin:4px 16px 18px;font-size:20px;line-height:1.4;letter-spacing:-.35px;-webkit-line-clamp:4;height:5.6em;}
+.post-card.is-detail .post-caption {padding:8px 20px 24px;font-size:clamp(25px,2.5vw,34px);line-height:1.35;letter-spacing:-.65px;}
+.post-card.is-preview .post-caption {padding:8px 16px 20px;}
+.keep-going-cards .post-card:not(.is-detail):not(.is-preview):not(.is-leaderboard) .post-caption {height:4.2em;-webkit-line-clamp:3;}
+.account-dropdown .account-notifications {display:flex;align-items:center;justify-content:space-between;gap:16px;color:var(--color-ink);background:transparent;}
+.account-dropdown .account-notifications:hover {background:rgba(32,32,30,.07);}
+.notification-menu-dot {width:9px;height:9px;flex:0 0 9px;border-radius:50%;background:var(--color-tomato);border:1px solid var(--color-ink);}
+.member-shell :is(.feed-sort button,.avatar-button,.account-dropdown a,.account-dropdown button):focus-visible {outline:1px solid var(--color-ink);outline-offset:3px;}
+.comment-thread {list-style:none;min-width:0;}
+.comment-replies {list-style:none;margin:0 0 0 18px;padding:0 0 0 14px;border-left:1px solid rgba(32,32,30,.25);}
+.comment-replies .comment-replies {margin-left:0;padding-left:10px;}
+.comment-replies .comment-replies .comment-replies {padding-left:0;border-left:0;}
+.comment-replies .comment-item {padding-block:14px;}
+.comment-replies .comment-avatar {flex-basis:26px;}
+.comment-replies .comment-avatar :is(img,span) {width:26px;height:26px;}
+@media(max-width:639px){.comment-replies{margin-left:10px;padding-left:10px;}.comment-replies .comment-replies{padding-left:6px;}.comment-replies .comment-replies .comment-replies{padding-left:0;}.post-card.is-detail .post-caption{padding-inline:16px;font-size:26px;}}

@@ -62,14 +62,10 @@ export function useComments(post: Post, sort: CommentSort) {
     );
   const patch = useCallback(
     async (id: string, change: Partial<Comment> | null) => {
-      setRecent(
-        (rows) =>
-          patchComments(
-            [{ comments: rows, nextCursor: null, commentCount: rows.length }],
-            id,
-            change,
-          )[0].comments,
-      );
+      const patchRows = (rows: Comment[]) => patchComments(
+        [{ comments: rows, nextCursor: null, commentCount: rows.length }], id, change,
+      )[0].comments;
+      setRecent(patchRows);
       await Promise.all(
         Array.from(cache.keys()).map(async (key) => {
           let parsed;
@@ -77,6 +73,16 @@ export function useComments(post: Post, sort: CommentSort) {
             parsed = JSON.parse(key.startsWith("$inf$") ? key.slice(5) : key);
           } catch {
             return;
+          }
+          if (parsed?.[1] === viewer && parsed[2] === post.id) {
+            if (parsed[0] === "comment-ancestors") {
+              await mutate(key, (rows: Comment[] | undefined) => rows && patchRows(rows), {revalidate:false});
+              return;
+            }
+            if (parsed[0] === "comment-target") {
+              await mutate(key, (row: Comment | null | undefined) => row ? patchRows([row])[0] || null : row, {revalidate:false});
+              return;
+            }
           }
           if (
             parsed?.[0] !== "comments" ||

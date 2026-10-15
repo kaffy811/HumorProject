@@ -28,8 +28,7 @@ export function JokeRankRow({ post }: { post: RankedPost }) {
         <div className="rank-copy">
           <strong>{post.caption}</strong>
           <span className="rank-meta">
-            {post.author.name} <span aria-hidden="true">·</span>{" "}
-            <span className="comic-label">{post.style}</span>
+            {post.author.name}
           </span>
         </div>
       </Link>

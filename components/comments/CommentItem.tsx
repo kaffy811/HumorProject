@@ -99,7 +99,7 @@ export function CommentItem({
     }
   }
   return (
-    <li
+    <article
       id={`comment-${comment.id}`}
       className={`comment-item ${highlighted ? "is-highlighted" : ""}`}
       aria-busy={pending}
@@ -228,6 +228,6 @@ export function CommentItem({
           </div>
         </PostDialog>
       )}
-    </li>
+    </article>
   );
 }

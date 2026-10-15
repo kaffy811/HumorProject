@@ -10,7 +10,7 @@ export async function downloadPost(node: HTMLElement, id: string) {
   clone.querySelectorAll("[data-post-controls]").forEach((el) => el.remove());
   clone.querySelectorAll(".post-caption").forEach((el) => {
     (el as HTMLElement).style.cssText =
-      "display:block;overflow:visible;-webkit-line-clamp:unset;";
+      "display:block;overflow:visible;-webkit-line-clamp:unset;height:auto;min-height:0;max-height:none;";
   });
   const watermark = document.createElement("div");
   watermark.className = "post-watermark";

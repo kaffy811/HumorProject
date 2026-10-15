@@ -7,6 +7,8 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import type { Post } from "@/lib/post-contracts";
 import type { Comment, CommentSort } from "@/lib/comment-contracts";
 import { useComments } from "@/hooks/useComments";
+import { useCommentThreads } from "@/hooks/useCommentThreads";
+import type { CommentThread } from "@/lib/comment-threads";
 import { CommentItem } from "./CommentItem";
 import { CommentComposer } from "./CommentComposer";
 import { usePostFeedback } from "@/components/feed/FeedCacheProvider";
@@ -30,18 +32,34 @@ export function CommentsPanel({
       profileRequest<Comment>(`/api/comments/${targetId}?postId=${post.id}`),
   );
   const targetScrolled = useRef<string | null>(null);
-  useEffect(() => {
-    if (!target.data || targetScrolled.current === target.data.id) return;
-    targetScrolled.current = target.data.id;
-    document
-      .getElementById(`comment-${target.data.id}`)
-      ?.scrollIntoView({ block: "center", behavior: "instant" });
-    input.current?.focus({ preventScroll: true });
-  }, [target.data, input]);
   const [sort, setSort] = useState<CommentSort>("top"),
     [reply, setReply] = useState<Comment | null>(null),
     comments = useComments(post, sort),
     { notify } = usePostFeedback();
+  const visibleComments = [
+    ...(target.data && !comments.comments.some(c => c.id === target.data!.id) ? [target.data] : []),
+    ...comments.comments,
+  ];
+  const conversations = useCommentThreads(visibleComments,viewerId,post.id,sort,comments.highlighted);
+  useEffect(() => {
+    if (!target.data || conversations.parentsLoading || targetScrolled.current === target.data.id) return;
+    targetScrolled.current = target.data.id;
+    document.getElementById(`comment-${target.data.id}`)?.scrollIntoView({ block: "center", behavior: "instant" });
+    input.current?.focus({ preventScroll: true });
+  }, [target.data, conversations.parentsLoading, input]);
+  function renderThread(thread: CommentThread): React.ReactNode {
+    const c = thread.comment;
+    return <li key={c.id} className="comment-thread">
+      <CommentItem
+        comment={c} viewerId={viewerId} op={post.author.id}
+        highlighted={comments.highlighted.has(c.id) || c.id === target.data?.id}
+        onReply={() => { setReply(c); input.current?.focus(); }}
+        onDelete={async () => { await comments.remove(c); if(reply?.id === c.id) setReply(null); }}
+        onPatch={change => comments.patch(c.id,change)}
+      />
+      {!!thread.replies.length && <ul className="comment-replies" aria-label={`Replies to ${c.author.name}`}>{thread.replies.map(renderThread)}</ul>}
+    </li>;
+  }
   useEffect(() => {
     let frame = 0;
     const measure = () => {
@@ -94,33 +112,9 @@ export function CommentsPanel({
           {comments.announcement}
         </span>
         <ul className="comment-list">
-          {[
-            ...(target.data &&
-            !comments.comments.some((c) => c.id === target.data!.id)
-              ? [target.data]
-              : []),
-            ...comments.comments,
-          ].map((c) => (
-            <CommentItem
-              key={c.id}
-              comment={c}
-              viewerId={viewerId}
-              op={post.author.id}
-              highlighted={
-                comments.highlighted.has(c.id) || c.id === target.data?.id
-              }
-              onReply={() => {
-                setReply(c);
-                input.current?.focus();
-              }}
-              onDelete={async () => {
-                await comments.remove(c);
-                if (reply?.id === c.id) setReply(null);
-              }}
-              onPatch={(change) => comments.patch(c.id, change)}
-            />
-          ))}
+          {conversations.threads.map(renderThread)}
         </ul>
+        {conversations.parentError && <p className="comments-error" role="alert">Some replies could not be grouped. <button className="text-button" onClick={() => void conversations.retryParents().catch(() => {})}>Retry</button></p>}
         {comments.loading && (
           <div aria-label="Loading comments" aria-busy="true">
             {[0, 1, 2].map((i) => (
