@@ -71,15 +71,8 @@ try {
     "create role authenticator;create table storage.buckets(id text primary key,name text,public boolean);",
   );
   await db.exec(
-    await readFile("deliverables/backups/preview-clone.sql", "utf8"),
+    await readFile("deliverables/backups/preview-apply.sql", "utf8"),
   );
-  for (const name of [
-    "202610140001_profile_feed_rank.sql",
-    "202610140002_auto_styles_handmade.sql",
-  ])
-    await db.exec(
-      await readFile("deliverables/backups/preview-" + name, "utf8"),
-    );
   const isolation = await publicFingerprint();
   if (isolation !== fingerprint)
     throw Error("Preview changed original application rows.");

@@ -121,6 +121,36 @@ export async function verifyPreviewMigration(db) {
       ).rows[0].available,
       false,
     );
+    await db.query("select set_config('request.jwt.claim.sub',$1,true)", [
+      other,
+    ]);
+    const claims = {
+      sub: other,
+      app_metadata: { providers: ["google"] },
+      is_anonymous: false,
+      amr: [{ method: "oauth", timestamp: 1 }],
+    };
+    await db.query("select set_config('request.jwt.claims',$1,true)", [
+      JSON.stringify(claims),
+    ]);
+    await db.exec("set local role authenticated");
+    await db.query("select public.reserve_humor_image()");
+    await db.query(
+      "insert into public.humor_votes(user_id,caption_id,value)values($1,$2,1)",
+      [other, ids[0]],
+    );
+    await db.query("select set_config('request.jwt.claims',$1,true)", [
+      JSON.stringify({
+        ...claims,
+        amr: [{ method: "password", timestamp: 2 }],
+      }),
+    ]);
+    await rejected(
+      "insert into public.humor_votes(user_id,caption_id,value)values($1,$2,1)",
+      [other, ids[1]],
+      /row-level security/,
+    );
+    await db.exec("reset role");
     const image = randomUUID();
     await db.query(
       "insert into public.humor_images(id,user_id,status,storage_path,locked_thumbnail_path)values($1,$2,'ready',($2::uuid::text||'/'||$1::uuid::text||'.webp'),'local-only-locked.webp')",

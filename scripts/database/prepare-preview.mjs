@@ -53,6 +53,24 @@ export async function preparePreview() {
     );
     await chmod(out, 0o600);
   }
+  const files = [
+    "preview-clone.sql",
+    "preview-202610140001_profile_feed_rank.sql",
+    "preview-202610140002_auto_styles_handmade.sql",
+  ];
+  const chunks = [];
+  for (const file of files)
+    chunks.push(
+      (await readFile("deliverables/backups/" + file, "utf8"))
+        .trim()
+        .replace(/^begin;\s*/i, "")
+        .replace(/commit;$/i, ""),
+    );
+  await writeFile(
+    "deliverables/backups/preview-apply.sql",
+    "begin;\n" + chunks.join("\n") + "\ncommit;\n",
+  );
+  await chmod("deliverables/backups/preview-apply.sql", 0o600);
   console.log(
     "Prepared private preview SQL; original row payloads preserved. No network or database changes.",
   );
