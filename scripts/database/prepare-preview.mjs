@@ -45,6 +45,7 @@ export async function preparePreview() {
   for (const name of [
     "202610140001_profile_feed_rank.sql",
     "202610140002_auto_styles_handmade.sql",
+    "202610140003_cache_invalidation_where.sql",
   ]) {
     const out = "deliverables/backups/preview-" + name;
     await writeFile(
@@ -57,6 +58,7 @@ export async function preparePreview() {
     "preview-clone.sql",
     "preview-202610140001_profile_feed_rank.sql",
     "preview-202610140002_auto_styles_handmade.sql",
+    "preview-202610140003_cache_invalidation_where.sql",
   ];
   const chunks = [];
   for (const file of files)

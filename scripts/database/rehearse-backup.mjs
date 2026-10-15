@@ -40,6 +40,7 @@ try {
       "utf8",
     ),
   );
+  await db.exec(await readFile("supabase/migrations/202610140003_cache_invalidation_where.sql", "utf8"));
   const profiles = (await db.query("select id from public.profiles")).rows;
   for (const p of profiles) {
     await db.query("select public.humor_profile_summary($1,$1)", [p.id]);
@@ -96,7 +97,7 @@ try {
   );
 
   console.log(
-    `PASS: local backup restore (${counts.rows[0].tables} tables), both migrations and profile/feed RPC smoke checks.`,
+    `PASS: local backup restore (${counts.rows[0].tables} tables), all migrations and profile/feed RPC smoke checks.`,
   );
   await writeFile(
     "deliverables/backups/local-restore-verification.json",
