@@ -109,7 +109,7 @@ export function PostCard(props: Props) {
             />
           ) : (
             <span className="post-author-placeholder" aria-hidden="true">
-              {post.author.name.slice(0, 1)}
+              {post.author.name.replace(/^@/, "").slice(0, 1).toUpperCase()}
             </span>
           )}
           <div>

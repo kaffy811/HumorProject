@@ -27,6 +27,7 @@ export async function uploadImage(
     }),
   );
   if (signal.aborted) throw new DOMException("Aborted", "AbortError");
+  if(prepared.mock){const form=new FormData();form.set("photo",file);return json(await fetch(`/api/humor/uploads/${prepared.uploadId}/mock`,{method:"POST",body:form,signal}));}
   const { error: uploadError } = await createClient()
     .storage.from(prepared.bucket)
     .uploadToSignedUrl(prepared.path, prepared.token, file, {

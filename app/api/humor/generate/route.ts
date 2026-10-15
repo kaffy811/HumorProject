@@ -1,3 +1,4 @@
+import {generateMockDraft} from "@/lib/mock-create";
 import { storageBucket } from "@/lib/supabase/schema";
 import { randomUUID } from "node:crypto";
 import {
@@ -38,6 +39,7 @@ export async function POST(request: Request) {
       throw new StudioError(
         "Keep your direction under 120 characters.",
       );
+    if(mockEnabled())return Response.json(generateMockDraft(ctx.user.id,input.uploadId));
     if (process.env.AI_ENABLED === "false")
       throw new StudioError(
         "The baby is on a creative break. Try again later.",

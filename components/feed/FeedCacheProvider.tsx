@@ -5,7 +5,7 @@ import Link from "next/link";
 import { SWRConfig } from "swr";
 const Viewer = createContext("");
 const ViewerAuthor = createContext<{ name: string; avatarUrl: string | null }>({
-  name: "You",
+  name: "@new_member",
   avatarUrl: null,
 });
 export function useViewerAuthor() {
@@ -52,7 +52,7 @@ export function FeedCacheProvider({
   const dismiss = useCallback(() => setMessage(""), []);
   return (
     <Viewer.Provider value={viewerId}>
-      <ViewerAuthor.Provider value={author || { name: "You", avatarUrl: null }}>
+      <ViewerAuthor.Provider value={author || { name: "@new_member", avatarUrl: null }}>
         <Feedback.Provider value={{ message, href, notify, dismiss }}>
           <SWRConfig
             value={{

@@ -34,7 +34,9 @@ export function useAuthorCache() {
               };
             if (
               obj.authorId === profile.id &&
-              typeof obj.authorName === "string"
+              typeof obj.authorName === "string" &&
+              obj.authorName !== "deleted" &&
+              obj.authorName !== "@deleted"
             )
               return { ...obj, authorName: profile.name };
             const result: Record<string, unknown> = {};

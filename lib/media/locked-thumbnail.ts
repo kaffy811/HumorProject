@@ -1,3 +1,4 @@
+import { downloadStoredFile } from "@/lib/media/preview-storage";
 /* eslint-disable @typescript-eslint/no-explicit-any -- Supabase schema is selected at deployment time. */
 import { storageBucket } from "@/lib/supabase/schema";
 import sharp from "sharp";
@@ -15,9 +16,7 @@ export async function ensureLockedThumbnail(
   if (lookup) throw lookup;
   if (existing.locked_thumbnail_path)
     return existing.locked_thumbnail_path as string;
-  const { data: file, error } = await db.storage
-    .from(storageBucket("humor-images"))
-    .download(sourcePath);
+  const { data: file, error } = await downloadStoredFile(db, "humor-images", sourcePath);
   if (error || !file) throw error || new Error("Missing image");
   const blurred = await sharp(new Uint8Array(await file.arrayBuffer()), {
     animated: false,

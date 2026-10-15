@@ -25,7 +25,7 @@ export function ProfileHeader({
           />
         ) : (
           <span className="profile-big-avatar avatar-letter" aria-hidden="true">
-            {author.name.slice(0, 1)}
+            {author.name.replace(/^@/, "").slice(0, 1).toUpperCase()}
           </span>
         )}
         <div>

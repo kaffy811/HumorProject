@@ -12,27 +12,27 @@ new Function("module", "exports", "require", code)(m, m.exports, require);
 const { windowStart, rankPosts, patchLeaderboard } = m.exports;
 assert.equal(
   windowStart("week", new Date("2026-10-11T12:00:00Z")),
-  "2026-10-05T04:00:00.000Z",
+  "2026-10-04T12:00:00.000Z",
 );
 assert.equal(
   windowStart("week", new Date("2026-11-01T18:00:00Z")),
-  "2026-10-26T04:00:00.000Z",
+  "2026-10-25T18:00:00.000Z",
 );
 assert.equal(
   windowStart("week", new Date("2026-11-02T06:00:00Z")),
-  "2026-11-02T05:00:00.000Z",
+  "2026-10-26T06:00:00.000Z",
 );
 assert.equal(
   windowStart("month", new Date("2026-11-01T18:00:00Z")),
-  "2026-11-01T04:00:00.000Z",
+  "2026-10-02T18:00:00.000Z",
 );
 assert.equal(
   windowStart("month", new Date("2026-03-10T18:00:00Z")),
-  "2026-03-01T05:00:00.000Z",
+  "2026-02-08T18:00:00.000Z",
 );
 assert.equal(
   windowStart("week", new Date("2026-03-08T18:00:00Z")),
-  "2026-03-02T05:00:00.000Z",
+  "2026-03-01T18:00:00.000Z",
 );
 const p = (id, author, ha, createdAt) => ({
   id,
@@ -45,7 +45,7 @@ const p = (id, author, ha, createdAt) => ({
   commentCount: 0,
 });
 const posts = [
-  p("old", "a", 100, "2026-10-04T23:00:00Z"),
+  p("old", "a", 100, "2026-10-03T23:00:00Z"),
   p("early", "b", 5, "2026-10-05T04:00:00Z"),
   p("late", "a", 5, "2026-10-06T04:00:00Z"),
   p("zero", "a", 0, "2026-10-07T04:00:00Z"),
@@ -54,13 +54,14 @@ const posts = [
 const ranked = rankPosts(posts, "week", new Date("2026-10-11T12:00:00Z"));
 assert.deepEqual(
   ranked.posts.map((p) => p.id),
-  ["early", "late"],
+  ["early", "late", "zero", "no-ha"],
 );
 assert.deepEqual(
   ranked.people.map((p) => [p.user.id, p.haReceived, p.postCount]),
   [
     ["b", 5, 1],
     ["a", 5, 2],
+    ["c", 0, 1],
   ],
 );
 assert.equal(ranked.people[1].bestPost.id, "late");
@@ -112,9 +113,9 @@ assert.equal(data.people[1].haReceived, 5);
 data = patchLeaderboard(data, posts[0], { haCount: 101 }, "a");
 assert.equal(data.people[1].haReceived, 5);
 data = patchLeaderboard(data, posts[2], null, "a");
-assert.equal(data.posts.length, 1);
+assert.equal(data.posts.length, 3);
 assert.equal(data.standing.bestPostRank, null);
 assert.equal(data.stale, true);
 console.log(
-  "PASS ET calendar boundaries across DST, publication-window totals, both tie rules, zero-Ha exclusions, rank beyond 50, stable optimistic counts, retry/rollback and deletion invalidation",
+  "PASS rolling windows across DST, publication-window totals, both tie rules, zero-Ha inclusion, rank beyond 50, stable optimistic counts, retry/rollback and deletion invalidation",
 );

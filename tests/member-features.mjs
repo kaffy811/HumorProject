@@ -14,12 +14,10 @@ function load(file, deps = {}) {
   );
   return m.exports;
 }
-const contracts = load("lib/create-contracts.ts"),
-  profile = load("lib/profile-contracts.ts");
-assert.equal(profile.displayName("  Kai Jones  "), "Kai Jones");
-assert.equal(profile.displayName("毛头"), "毛头");
-for (const name of ["", " ", "a", "a".repeat(31), "abc\nxyz", "a\x7fb"])
-  assert.throws(() => profile.displayName(name));
+const contracts = load("lib/create-contracts.ts");
+const validation = load("lib/profile-validation.ts");
+assert.deepEqual(validation.profileFieldsFrom({username:"  KAI_1  ",firstName:" Kai ",lastName:" Jones "}),{username:"kai_1",first_name:"Kai",last_name:"Jones"});
+for(const username of ["","ab","a".repeat(25),"a-b","ab c","@name"]){assert.throws(()=>validation.profileFieldsFrom({username,firstName:"Kai",lastName:"Jones"}));}
 const seeds = load("lib/seed-validation.ts", {
   "./create-contracts": contracts,
 });
@@ -138,12 +136,13 @@ const reject = spawnSync(
 assert.equal(reject.status, 1);
 assert.match(reject.stderr, /refuses placeholder/);
 console.log(
-  "PASS display names, filename/path/environment and placeholder rejection, dry-run image normalization with no writes, profile count retry/rollback, notification grouping text/targets and mock inbox isolation",
+  "PASS public username validation, filename/path/environment and placeholder rejection, dry-run image normalization with no writes, profile count retry/rollback, notification grouping text/targets and mock inbox isolation",
 );
 const sharp = require("sharp");
 let staged;
 const avatarServer = load("lib/profile-server.ts", {
   "server-only": {},
+  "@/lib/supabase/schema": {storageBucket: name => name},
   sharp: { default: sharp },
   "./mock-profiles": {
     mockStageAvatar(owner, id, bytes) {

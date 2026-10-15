@@ -10,7 +10,7 @@ import { useFeedViewer } from "@/components/feed/FeedCacheProvider";
 export function useLeaderboard(window: RankingWindow) {
   const viewer = useFeedViewer(),
     { cache } = useSWRConfig();
-  const key = JSON.stringify(["leaderboard", viewer, window]);
+  const key = JSON.stringify(["leaderboard", viewer, window,"rolling-v2"]);
   const cached = cache.get(key)?.data as LeaderboardData | undefined;
   const result = useSWR<LeaderboardData>(
     key,

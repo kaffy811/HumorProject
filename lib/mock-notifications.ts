@@ -10,7 +10,7 @@ export function mockInbox(owner: string, open = false): NotificationPage {
   const items = [
     {
       id: "mock-notification-ha",
-      actor: { id: "mock-author-1", name: "Alex", avatarUrl: null },
+      actor: { id: "mock-author-1", name: "@alex", avatarUrl: null },
       type: "ha" as const,
       postId: "mock-1",
       commentId: null,

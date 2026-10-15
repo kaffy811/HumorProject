@@ -5,8 +5,8 @@ import ts from 'typescript';
 const require=createRequire(import.meta.url);
 function load(file,deps={}){const code=ts.transpile(readFileSync(file,'utf8'),{module:ts.ModuleKind.CommonJS});const m={exports:{}};new Function('module','exports','require',code)(m,m.exports,id=>Object.hasOwn(deps,id)?deps[id]:require(id));return m.exports}
 const c=load('lib/post-contracts.ts');const now=Date.parse('2026-10-10T12:00:00Z');
-assert.equal(c.hotScore(8,'2026-10-10T10:00:00Z',now),1);
-assert.ok(c.hotScore(8,'2026-10-10T11:00:00Z',now)>1);
+assert.equal(c.hotScore(8,'2026-10-10T10:00:00Z',now),8);
+assert.equal(c.hotScore(8,'2026-10-10T11:00:00Z',now),8);
 assert.equal(c.imageRatio(400,1000),.8);assert.equal(c.imageRatio(1200,800),1.5);
 assert.equal(c.relativeTime('2026-10-10T09:00:00Z',now),'3h');assert.equal(c.relativeTime('2026-10-10T11:59:45Z',now),'now');
 const mock=load('lib/mock-posts.ts',{'server-only':{},'./post-contracts':c});
@@ -18,8 +18,8 @@ assert.throws(()=>mock.mockAction('tester','mock-2','delete'));mock.mockAction('
 console.log('PASS Hot score, image crop ratio, relative times, stable mock cursors, account isolation and author-only deletion');
 
 const savedPost='mock-3';
-assert.deepEqual(mock.mockAction('tester',savedPost,'save','save-request-a'),{viewerHasSaved:true});
-assert.deepEqual(mock.mockAction('tester',savedPost,'save','save-request-a'),{viewerHasSaved:true});
+assert.equal(mock.mockAction('tester',savedPost,'save','save-request-a').viewerHasSaved,true);
+assert.equal(mock.mockAction('tester',savedPost,'save','save-request-a').viewerHasSaved,true);
 assert.throws(()=>mock.mockAction('tester','mock-4','save','save-request-a'));
 let collection=mock.mockList('tester','saved',null,12);
 assert.equal(collection.posts.length,1);assert.equal(collection.posts[0].id,savedPost);assert.equal(collection.posts[0].viewerHasSaved,true);

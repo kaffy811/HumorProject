@@ -30,7 +30,7 @@ export async function studioContext(request: Request) {
       403,
     );
   const secret =
-    process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+    mockEnabled()?config().key:process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!secret)
     throw new StudioError("The studio is awaiting server configuration.", 503);
   const admin = createAdmin(config().url, secret, {

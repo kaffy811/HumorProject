@@ -3,7 +3,7 @@ export type Profile = {
   last_name: string | null;
   username: string | null;
   avatar_path: string | null;
-  display_name?: string | null;
+  updated_at?: string;
   onboarded_at?: string | null;
 };
 export function profileComplete(profile: Profile | null) {

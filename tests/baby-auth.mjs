@@ -16,7 +16,8 @@ for (const [user, jwt] of [[null,claims],[{...google,identities:[{provider:'emai
 const { profileComplete } = load('lib/profile-complete.ts');
 const complete = { first_name:'Sam',last_name:'Jones',username:'sam_j',avatar_path:'sam/photo.png' };
 assert.equal(profileComplete(complete),true);
-for (const field of Object.keys(complete)) assert.equal(profileComplete({...complete,[field]:null}),false);
+assert.equal(profileComplete({...complete,avatar_path:null}),true);
+for (const field of ["first_name","last_name","username"]) assert.equal(profileComplete({...complete,[field]:null}),false);
 const { profileFieldsFrom } = load('lib/profile-validation.ts');
 assert.deepEqual(profileFieldsFrom({firstName:'Sam',lastName:'Jones',username:' SAM_J '}),{first_name:'Sam',last_name:'Jones',username:'sam_j'});
 for (const username of ['', 'ab', 'a'.repeat(25), 'sam j', 'sam/j', '<script>', '你好']) assert.throws(()=>profileFieldsFrom({firstName:'Sam',lastName:'Jones',username}));

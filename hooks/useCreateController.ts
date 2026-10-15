@@ -1,8 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef } from "react";
 import { useContentCache } from "./useContentCache";
-import {getPost} from "@/lib/comments";
-import { useFeedViewer } from "@/components/feed/FeedCacheProvider";
+import { getPost } from "@/lib/comments";
 import { useRouter } from "next/navigation";
 import { useStores } from "@/stores/StoreProvider";
 import { selectedCaption } from "@/stores/create-store";
@@ -11,10 +10,9 @@ import { uploadImage } from "@/lib/uploadImage";
 import { generateCaptions } from "@/lib/generateCaptions";
 import { publishPost } from "@/lib/publishPost";
 export function useCreateController() {
-  const { create, mascot } = useStores();
+  const { create, mascot, feed } = useStores();
   const router = useRouter();
   const refreshContent = useContentCache();
-  const viewer = useFeedViewer();
   const file = useRef<File | null>(null);
   const active = useRef<AbortController | null>(null);
   const preview = useRef<string | null>(null);
@@ -148,8 +146,10 @@ export function useCreateController() {
       if (controller.signal.aborted) return;
       dispatch({ type: "PUBLISH_SUCCEEDED", requestId, postId: result.postId });
       mascot.getState().setMood("heart");
-      const posted=await getPost(result.postId).catch(()=>null);
-      await refreshContent(posted||undefined); router.refresh();
+      feed.getState().markDetailEntry("/feed?sort=new&page=1", 0, 1, "new");
+      const posted = await getPost(result.postId).catch(() => null);
+      await refreshContent(posted || undefined);
+      router.refresh();
       redirectTimer.current = setTimeout(() => router.push(result.href), 1500);
     } catch (error) {
       if (controller.signal.aborted) return;
@@ -163,11 +163,12 @@ export function useCreateController() {
       });
       mascot.getState().setMood("cry");
     }
-  }, [create, dispatch, mascot, router, refreshContent, viewer]);
+  }, [create, dispatch, mascot, router, refreshContent, feed]);
   return {
     selectFile,
     generate,
-    previewHandmade:()=>dispatch({type:"PREVIEW_HANDMADE",id:crypto.randomUUID()}),
+    previewHandmade: () =>
+      dispatch({ type: "PREVIEW_HANDMADE", id: crypto.randomUUID() }),
     publish,
     retryUpload: () => file.current && selectFile(file.current),
     removeImage: () => {

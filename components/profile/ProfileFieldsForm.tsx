@@ -22,11 +22,13 @@ export function ProfileFieldsForm({
   onSaved,
   onCancel,
   submitLabel = "Save changes",
+  onBusyChange,
 }: {
   initial: ProfileFields;
   onSaved: (profile: MemberProfile) => Promise<void> | void;
   onCancel?: () => void;
   submitLabel?: string;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const [name, setName] = useState(initial.username),
     [first, setFirst] = useState(initial.firstName),
@@ -68,6 +70,7 @@ export function ProfileFieldsForm({
     e.preventDefault();
     if (busy || availability === "taken") return;
     setBusy(true);
+    onBusyChange?.(true);
     setError("");
     try {
       const avatar = file ? await stageAvatar(file, crop) : null;
@@ -83,6 +86,7 @@ export function ProfileFieldsForm({
       setError(e instanceof Error ? e.message : "Could not save. Try again.");
     } finally {
       setBusy(false);
+      onBusyChange?.(false);
     }
   }
   function choose(f?: File) {
@@ -129,7 +133,7 @@ export function ProfileFieldsForm({
           )}
         </button>
         <button
-          className="comic-button"
+          className="comic-button is-secondary"
           type="button"
           disabled={busy}
           onClick={() => input.current?.click()}
@@ -235,7 +239,7 @@ export function ProfileFieldsForm({
         {onCancel && (
           <button
             type="button"
-            className="comic-button"
+            className="comic-button is-secondary"
             disabled={busy}
             onClick={onCancel}
           >

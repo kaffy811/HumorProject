@@ -34,7 +34,7 @@ function Item({ item, clock }: { item: NotificationItem; clock: number }) {
             className="notification-avatar avatar-letter"
             aria-hidden="true"
           >
-            {actor.name.slice(0, 1)}
+            {actor.name.replace(/^@/, "").slice(0, 1).toUpperCase()}
           </span>
         )}
         <div className="notification-copy">

@@ -9,7 +9,7 @@ with tables as materialized (
  select 0 phase,0::bigint pos,'-- Application backup: tables/data/functions/triggers/RLS/ACL. Auth and Storage are unchanged dependencies.'||E'\nSET check_function_bodies=false;\nSET search_path=public,pg_catalog;' sql
  union all select 1,t.oid::bigint,format('CREATE TABLE public.%I (%s);',t.relname,c.defs) from tables t join columns c on c.oid=t.oid
  union all select 2,t.oid::bigint,format('INSERT INTO public.%I SELECT * FROM json_populate_recordset(NULL::public.%I,%L);',t.relname,t.relname,x.value) from tables t cross join lateral XMLTABLE('/table/row' PASSING query_to_xml(format('select coalesce(json_agg(t),''[]''::json)::text as data from public.%I t',t.relname),false,false,'') COLUMNS value text PATH 'data') x
- union all select 3,p.oid::bigint,pg_get_functiondef(p.oid) from routines p
+ union all select 3,p.oid::bigint,pg_get_functiondef(p.oid)||';' from routines p
  union all select 4,c.oid::bigint,format('ALTER TABLE public.%I ADD CONSTRAINT %I %s;',t.relname,c.conname,pg_get_constraintdef(c.oid)) from tables t join pg_constraint c on c.conrelid=t.oid
  union all select 5,i.indexrelid::bigint,pg_get_indexdef(i.indexrelid)||';' from tables t join pg_index i on i.indrelid=t.oid where not exists(select 1 from pg_constraint c where c.conindid=i.indexrelid)
  union all select 6,g.oid::bigint,pg_get_triggerdef(g.oid)||';' from tables t join pg_trigger g on g.tgrelid=t.oid where not g.tgisinternal

@@ -1,6 +1,6 @@
 import "server-only";
 import type { MemberProfile } from "./profile-contracts";
-import { mockList } from "./mock-posts";
+import { mockList, mockUpdateAuthor } from "./mock-posts";
 import { mockLeaderboard } from "./mock-leaderboard";
 const state = globalThis as typeof globalThis & {
   humorMockProfiles?: Map<string, MemberProfile>;
@@ -25,8 +25,9 @@ export function mockProfile(owner: string, id: string): MemberProfile | null {
   const override = state.humorMockProfiles!.get(`${owner}:${id}`);
   return {
     ...(author || { id, name: "@you", username: "you", avatarUrl: null }),
-    username: id === owner ? "you" : "member",
-    firstName:"Local", lastName:"Member",
+    username: author?.username || (id === owner ? "you" : "member"),
+    firstName: "Local",
+    lastName: "Member",
     joinedAt: "2026-10-01T12:00:00Z",
     onboardedAt: new Date().toISOString(),
     ...override,
@@ -37,19 +38,28 @@ export function mockProfile(owner: string, id: string): MemberProfile | null {
         ?.rank ?? null,
   };
 }
-export function mockSaveProfile(owner: string, fields: {username:string;first_name:string;last_name:string}, upload?: string, action?:string) {
+export function mockSaveProfile(
+  owner: string,
+  fields: { username: string; first_name: string; last_name: string },
+  upload?: string,
+  action?: string,
+) {
   const value = mockProfile(owner, owner)!;
   if (upload && !mockAvatar(owner, upload))
     throw Error("Avatar preview expired.");
   const updated = {
     ...value,
-    name: `@${fields.username}`,username:fields.username,firstName:fields.first_name,lastName:fields.last_name,
-    ...(action === "remove" ? {avatarUrl:null} : {}),
+    name: `@${fields.username}`,
+    username: fields.username,
+    firstName: fields.first_name,
+    lastName: fields.last_name,
+    ...(action === "remove" ? { avatarUrl: null } : {}),
     ...(upload
       ? { avatarUrl: `/api/profile/avatar/preview?id=${upload}` }
       : {}),
   };
   state.humorMockProfiles!.set(`${owner}:${owner}`, updated);
+  mockUpdateAuthor(owner,updated);
   return updated;
 }
 export function mockStageAvatar(owner: string, id: string, bytes: Uint8Array) {

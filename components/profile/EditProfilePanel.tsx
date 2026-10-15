@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { MemberProfile } from "@/lib/profile-contracts";
 import { useAuthorCache } from "@/hooks/useAuthorCache";
@@ -16,6 +16,7 @@ export function EditProfilePanel({
     patch = useAuthorCache(),
     refresh = useContentCache(),
     router = useRouter();
+  const [busy, setBusy] = useState(false);
   useEffect(() => {
     const node = dialog.current;
     if (!node) return;
@@ -31,7 +32,10 @@ export function EditProfilePanel({
       ref={dialog}
       className="profile-edit-dialog comic-card"
       aria-labelledby="edit-profile-title"
-      onCancel={onClose}
+      onCancel={(e) => {
+        if (busy) e.preventDefault();
+        else onClose();
+      }}
     >
       <div className="profile-edit-heading">
         <h2 id="edit-profile-title">A slight rebrand.</h2>
@@ -40,11 +44,13 @@ export function EditProfilePanel({
           className="profile-close"
           aria-label="Close edit profile"
           onClick={onClose}
+          disabled={busy}
         >
           ×
         </button>
       </div>
       <ProfileFieldsForm
+        onBusyChange={setBusy}
         initial={{
           username: profile.username,
           firstName: profile.firstName,

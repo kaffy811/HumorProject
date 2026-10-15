@@ -1,3 +1,5 @@
+import { storageBucket } from "@/lib/supabase/schema";
+import { downloadStoredFile, ensurePreviewFile } from "@/lib/media/preview-storage";
 import sharp from "sharp";
 import { postsContext, activePost } from "@/lib/posts-server";
 import { studioFailure, StudioError } from "@/lib/studio-server";
@@ -32,7 +34,7 @@ export async function GET(
     } else throw new StudioError("Invalid media.", 400);
     if (!path) throw new StudioError("Image not found.", 404);
     if (kind === "thumb") {
-      const file = await ctx.admin.storage.from(bucket).download(path);
+      const file = await downloadStoredFile(ctx.admin,bucket,path);
       if (!file.data) throw new StudioError("Image not found.", 404);
       const bytes = await sharp(new Uint8Array(await file.data.arrayBuffer()), {
         animated: false,
@@ -50,8 +52,9 @@ export async function GET(
         },
       });
     }
+    await ensurePreviewFile(ctx.admin,bucket,path);
     const { data, error } = await ctx.admin.storage
-      .from(bucket)
+      .from(storageBucket(bucket))
       .createSignedUrl(path, 300);
     if (error) throw error;
     return new Response(null, {

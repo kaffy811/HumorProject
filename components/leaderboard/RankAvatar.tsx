@@ -21,7 +21,7 @@ export function RankAvatar({
     />
   ) : (
     <span className="rank-avatar rank-avatar-fallback" aria-hidden="true">
-      {name.slice(0, 1)}
+      {name.replace(/^@/, "").slice(0, 1).toUpperCase()}
     </span>
   );
 }

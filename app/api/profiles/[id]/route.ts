@@ -14,7 +14,7 @@ export async function GET(
     if (ctx.mock) {
       const data = mockProfile(ctx.user.id, id);
       if (!data) throw new StudioError("Person not found.", 404);
-      return Response.json(data);
+      return Response.json({...data,googlePhotoUrl:id===ctx.user.id?trustedGooglePhoto(ctx.user):null});
     }
     if (!validUuid(id)) throw new StudioError("Person not found.", 404);
     const { data, error } = await ctx.admin.rpc("humor_profile_summary", {

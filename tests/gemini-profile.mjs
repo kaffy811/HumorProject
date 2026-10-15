@@ -1,50 +1,20 @@
-import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import ts from 'typescript';
-function load(file, dependencies = {}) {
-  const code = ts.transpile(readFileSync(file, 'utf8'), { module: ts.ModuleKind.CommonJS });
-  const testModule = { exports: {} };
-  new Function('module', 'exports', 'require', code)(testModule, testModule.exports, id => dependencies[id] || {});
-  return testModule.exports;
-}
-const validation = load('lib/humor-validation.ts');
-const { namesFrom } = load('lib/profile-validation.ts');
-assert.deepEqual(namesFrom({ firstName: ' Sam ', lastName: '李' }), { first_name: 'Sam', last_name: '李' });
-for (const value of [null, {}, { firstName: '', lastName: 'x' }, { firstName: 'x', lastName: 12 }, { firstName: 'x'.repeat(81), lastName: 'x' }, { firstName: 'a\n', lastName: 'x\u0000' }]) assert.throws(() => namesFrom(value));
-const gemini = load('lib/gemini.ts', { '@/lib/humor-validation': validation });
-const fetchOriginal = globalThis.fetch;
-const keyOriginal = process.env.GEMINI_API_KEY;
-const modelOriginal = process.env.GEMINI_MODEL;
-process.env.GEMINI_API_KEY = 'test-key'; process.env.GEMINI_MODEL = 'gemini-test';
-let payload;
-try {
-  globalThis.fetch = async (url, options) => {
-    assert.equal(url, 'https://generativelanguage.googleapis.com/v1beta/models/gemini-test:generateContent');
-    assert.equal(options.headers['x-goog-api-key'], 'test-key');
-    assert.ok(!url.includes('test-key'));
-    payload = JSON.parse(options.body);
-    assert.equal(payload.systemInstruction.parts[0].text, gemini.SYSTEM_PROMPT);
-    assert.equal(payload.contents[0].parts[0].text, gemini.USER_PROMPT);
-    assert.equal(payload.contents[0].parts[1].inlineData.mimeType, 'image/png');
-    return Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ thought: true, text: 'ignored internal thought' }, { text: JSON.stringify({ description: 'A coffee on a desk.', captions: ['One', 'Two', 'Three', 'Four'] }) }] } }], usageMetadata: { promptTokenCount: 20 } });
-  };
-  const result = await gemini.generateCaptions(new Uint8Array([1, 2]), 'image/png');
-  assert.deepEqual(result.captions, ['One', 'Two', 'Three', 'Four']);
-  assert.equal(result.usage.promptTokenCount, 20);
-  assert.equal(payload.generationConfig.responseMimeType, 'application/json');
-  for (const response of [
-    { candidates: [{ finishReason: 'MAX_TOKENS', content: { parts: [] } }] },
-    { candidates: [{ finishReason: 'STOP', content: { parts: [{ text: '{}' }] } }] },
-    { promptFeedback: { blockReason: 'SAFETY' } },
-    { candidates: [{ finishReason: 'STOP', content: { parts: [{ text: '{"description":"scene","captions":["a","a","b","c"]}' }] } }] },
-  ]) { globalThis.fetch = async () => Response.json(response); await assert.rejects(() => gemini.generateCaptions(new Uint8Array([1]), 'image/png')); }
-  globalThis.fetch = async () => new Response('', { status: 429 });
-  await assert.rejects(() => gemini.generateCaptions(new Uint8Array([1]), 'image/png'));
-  delete process.env.GEMINI_API_KEY; assert.throws(() => gemini.geminiSettings());
-  process.env.GEMINI_API_KEY = 'test-key'; process.env.GEMINI_MODEL = '../../invalid'; assert.throws(() => gemini.geminiSettings());
-} finally {
-  globalThis.fetch = fetchOriginal;
-  if (keyOriginal === undefined) delete process.env.GEMINI_API_KEY; else process.env.GEMINI_API_KEY = keyOriginal;
-  if (modelOriginal === undefined) delete process.env.GEMINI_MODEL; else process.env.GEMINI_MODEL = modelOriginal;
-}
-console.log('PASS names, Gemini image request, persisted prompt parity, usage, blocked/truncated/malformed/duplicate output and missing configuration');
+import assert from'node:assert/strict';import{readFileSync}from'node:fs';import ts from'typescript';
+function load(file,deps={}){const m={exports:{}};new Function('module','exports','require',ts.transpile(readFileSync(file,'utf8'),{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}))(m,m.exports,id=>deps[id]||{});return m.exports;}
+const contracts=load('lib/create-contracts.ts'),gemini=load('lib/gemini.ts',{'./create-contracts':contracts}),{namesFrom}=load('lib/profile-validation.ts');
+assert.deepEqual(namesFrom({firstName:' Sam ',lastName:'李'}),{first_name:'Sam',last_name:'李'});for(const firstName of['','x'.repeat(81),'a\x00'])assert.throws(()=>namesFrom({firstName,lastName:'X'}));
+const good={captions:['deadpan','roast','pun','absurd'].map((style,i)=>({caption:`Different joke ${i}.`,style}))};
+for(const captions of[good.captions.slice(0,3),[...good.captions,good.captions[0]],good.captions.map((c,i)=>i?c:{...c,caption:' '}),good.captions.map((c,i)=>i?c:{...c,caption:'毛'.repeat(201)}),good.captions.map((c,i)=>i?c:{...c,style:'handmade'}),good.captions.map(c=>({...c,style:'roast'}))])assert.throws(()=>gemini.validateCaptions({captions}));
+assert.equal(gemini.validateCaptions({...good,captions:good.captions.map((c,i)=>i?c:{...c,caption:'毛'.repeat(200)})})[0].caption.length,200);
+const originalFetch=globalThis.fetch,oldKey=process.env.GEMINI_API_KEY,oldModel=process.env.GEMINI_MODEL;process.env.GEMINI_API_KEY='test-key';process.env.GEMINI_MODEL='gemini-test';let calls=0,requests=[];
+const response=(body,reason='STOP')=>Response.json({candidates:[{finishReason:reason,content:{parts:[{thought:true,text:'not a caption'},{text:JSON.stringify(body)}]}}],usageMetadata:{promptTokenCount:20}});
+try{
+ globalThis.fetch=async(url,opts)=>{calls++;assert.ok(!url.includes('test-key'));assert.equal(opts.headers['x-goog-api-key'],'test-key');requests.push(JSON.parse(opts.body));return response(good);};
+ let result=await gemini.generateCaptions(new Uint8Array([1,2]),'image/png',gemini.captionPrompt('Butler at midnight'));
+ assert.equal(calls,1);assert.equal(result.captions.length,4);assert.equal(result.captions[0].style,'Deadpan');assert.equal(result.usage.attempts[0].promptTokenCount,20);assert.equal(requests[0].systemInstruction.parts[0].text,gemini.SYSTEM_PROMPT);assert.equal(requests[0].contents[0].parts[0].text,'Image: [image]\nDirection: Butler at midnight');assert.equal(requests[0].contents[0].parts[1].inlineData.mimeType,'image/png');assert.equal(requests[0].generationConfig.responseJsonSchema.properties.captions.minItems,4);
+ calls=0;globalThis.fetch=async()=>{calls++;return response(calls===1?{captions:good.captions.slice(0,3)}:good);};result=await gemini.generateCaptions(new Uint8Array([1]),'image/png');assert.equal(calls,2);assert.equal(result.usage.attempts.length,2);
+ calls=0;globalThis.fetch=async()=>{calls++;return response({captions:[]});};await assert.rejects(()=>gemini.generateCaptions(new Uint8Array([1]),'image/png'));assert.equal(calls,2);
+ calls=0;globalThis.fetch=async()=>{calls++;return Response.json({promptFeedback:{blockReason:'SAFETY'}});};await assert.rejects(()=>gemini.generateCaptions(new Uint8Array([1]),'image/png'));assert.equal(calls,1);
+ calls=0;globalThis.fetch=async()=>{calls++;return new Response('',{status:429});};await assert.rejects(()=>gemini.generateCaptions(new Uint8Array([1]),'image/png'));assert.equal(calls,1);
+ delete process.env.GEMINI_API_KEY;assert.throws(()=>gemini.geminiSettings());process.env.GEMINI_API_KEY='test';process.env.GEMINI_MODEL='../../invalid';assert.throws(()=>gemini.geminiSettings());
+}finally{globalThis.fetch=originalFetch;if(oldKey===undefined)delete process.env.GEMINI_API_KEY;else process.env.GEMINI_API_KEY=oldKey;if(oldModel===undefined)delete process.env.GEMINI_MODEL;else process.env.GEMINI_MODEL=oldModel;}
+console.log('PASS exact image/direction prompt, four distinct caption styles, nonempty/Unicode 200-character validation, one retry and no retry for safety/rate errors');

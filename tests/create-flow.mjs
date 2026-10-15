@@ -21,3 +21,14 @@ s=act(s,{type:'PUBLISH_STARTED',requestId:'post1'});s=act(s,{type:'PUBLISH_FAILE
 s=act(s,{type:'PUBLISH_STARTED',requestId:'post2'});assert.equal(act(s,{type:'PUBLISH_SUCCEEDED',requestId:'post1',postId:'old'}),s);s=act(s,{type:'PUBLISH_SUCCEEDED',requestId:'post2',postId:'posted'});assert.equal(hasUnpublishedContent(s),false);
 const {createMascotStore}=load('stores/mascot-store.ts');const mascot=createMascotStore();mascot.getState().setMood('cry',20);mascot.getState().setMood('thinking',0);await new Promise(resolve=>setTimeout(resolve,40));assert.equal(mascot.getState().mood,'thinking');mascot.getState().resetMood();mascot.getState().poke();assert.equal(mascot.getState().mood,'huh');mascot.getState().poke();assert.equal(mascot.getState().mood,'annoyed');mascot.getState().poke();assert.equal(mascot.getState().mood,'smirk');mascot.getState().dispose();
 console.log('PASS upload limits/GIF, stale request rejection, Unicode limits, edited caption retention, failure recovery, publication state and interrupted mascot timers');
+
+let handmade=act(start,{type:'IMAGE_SELECTED',requestId:'u',image:{previewUrl:'blob:manual',filename:'x.png',mimeType:'image/png',bytes:10}});
+handmade=act(handmade,{type:'UPLOAD_READY',requestId:'u',draftId:'draft',uploadId:'image'});
+handmade=act(handmade,{type:'SET_WRITING_MODE',mode:'handmade'});
+handmade=act(handmade,{type:'SET_HANDMADE',text:'😀'.repeat(201)});
+assert.equal(contracts.characterCount(handmade.handmadeText),200);
+handmade=act(handmade,{type:'PREVIEW_HANDMADE',id:'manual'});
+assert.equal(handmade.step,4);assert.equal(handmade.candidates[0].style,'HANDMADE');assert.equal(handmade.candidates[0].generationId,null);
+handmade=act(handmade,{type:'PUBLISH_STARTED',requestId:'publish-manual'});handmade=act(handmade,{type:'PUBLISH_FAILED',requestId:'publish-manual',message:'Safety approval unavailable.'});
+assert.equal(selectedCaption(handmade).text,'😀'.repeat(200));assert.equal(handmade.image.uploadId,'image');
+console.log('PASS handmade bypasses AI, Unicode limit, preview style and failed-publication draft preservation');

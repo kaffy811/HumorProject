@@ -1,8 +1,9 @@
 "use client";
-import { Suspense, useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
-import { listPosts } from "@/lib/posts";
+import { NewPostsNotice } from "./NewPostsNotice";
+import { listPosts, checkPosts } from "@/lib/posts";
 import { useFeedViewer } from "./FeedCacheProvider";
 import { useStores, useMascot } from "@/stores/StoreProvider";
 import { usePostCache } from "@/hooks/usePostCache";
@@ -54,9 +55,44 @@ function Content() {
     error = swr.error || session.error,
     restored = useRef(""),
     end = useRef<HTMLDivElement>(null);
+  const [newCount, setNewCount] = useState(0),
+    [checking, setChecking] = useState(false);
+  const cutoff = session.data?.cutoff;
+  useEffect(() => {
+    if (!cutoff) return;
+    let active = true;
+    const timer = setInterval(() => {
+      if (document.hidden) return;
+      void checkPosts(cutoff)
+        .then((r) => {
+          if (active) setNewCount(r.count);
+        })
+        .catch(() => {});
+    }, 60000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [cutoff]);
+  async function acceptNew() {
+    setChecking(true);
+    try {
+      await session.mutate();
+      setNewCount(0);
+      router.replace(`/feed?sort=${sort}&page=1`, { scroll: false });
+      window.scrollTo({ top: 0, behavior: "instant" });
+    } finally {
+      setChecking(false);
+    }
+  }
   const total =
     data?.totalPages ??
     Math.max(1, Math.ceil((data?.totalCount ?? data?.posts.length ?? 0) / 9));
+  useEffect(() => {
+    if (data && !swr.isValidating && page > total) {
+      router.replace(`/feed?sort=${sort}&page=${total}`, { scroll: false });
+    }
+  }, [data, swr.isValidating, page, total, sort, router]);
   useEffect(() => {
     if (!data || !data.posts) return;
     const back = stores.feed.getState().detailReturn;
@@ -85,6 +121,7 @@ function Content() {
     o.observe(node);
     return () => o.disconnect();
   }, [page, total, data?.posts.length, setMood]);
+  async function retry(){const fresh=await session.mutate();if(fresh && page===1)await swr.mutate(fresh,{revalidate:false});}
   function change(n: number) {
     router.push(`/feed?sort=${sort}&page=${n}`, { scroll: false });
     document
@@ -98,6 +135,11 @@ function Content() {
         <p>Someone made this instead of doing their homework.</p>
       </header>
       <FeedSortTabs sort={sort} />
+      <NewPostsNotice
+        count={newCount}
+        busy={checking}
+        onClick={() => void acceptNew()}
+      />
       {data?.mode === "mock" && (
         <p className="comic-label">
           Preview data · No production posts or votes are changed
@@ -135,7 +177,7 @@ function Content() {
         <FeedStatus
           kind="error"
           message={error.message}
-          onRetry={() => void session.mutate().then(() => swr.mutate())}
+          onRetry={() => void retry()}
         />
       )}{" "}
       {data && !data.posts.length && !error && <FeedStatus kind="empty" />}

@@ -1,4 +1,4 @@
-import { storageBucket } from "@/lib/supabase/schema";
+import { downloadStoredFile } from "@/lib/media/preview-storage";
 import { featureFailure } from "@/lib/member-feature-server";
 import { postsContext } from "@/lib/posts-server";
 import { validUuid } from "@/lib/create-contracts";
@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const ctx = await postsContext(),
+    const ctx = await postsContext(false),
       { id } = await params;
     if (!validUuid(id)) throw new StudioError("Photo not found.", 404);
     const { data, error } = await ctx.admin
@@ -18,9 +18,7 @@ export async function GET(
       .maybeSingle();
     if (error) throw error;
     if (!data?.avatar_path) throw new StudioError("Photo not found.", 404);
-    const file = await ctx.admin.storage
-      .from(storageBucket("humor-avatars"))
-      .download(data.avatar_path);
+    const file = await downloadStoredFile(ctx.admin, "humor-avatars", data.avatar_path);
     if (file.error || !file.data)
       throw new StudioError("Photo not found.", 404);
     return new Response(file.data, {

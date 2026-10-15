@@ -1,3 +1,4 @@
+import { downloadStoredFile } from "@/lib/media/preview-storage";
 import { storageBucket } from "@/lib/supabase/schema";
 /* eslint-disable @next/next/no-img-element */
 import "server-only";
@@ -12,15 +13,17 @@ export async function postOg(id: string) {
   const mock = mockEnabled(),
     db = mock ? null : publicAdmin();
   if (db && p.ogPath) {
-    const { data } = await db.storage.from(storageBucket("humor-previews")).download(p.ogPath);
+    const { data } = await downloadStoredFile(db, "humor-previews", p.ogPath);
     if (data) return new Uint8Array(await data.arrayBuffer());
   }
   const source = mock
     ? await readFile(`${process.cwd()}/public${p.imagePath}`)
     : await (async () => {
-        const { data, error } = await db!.storage
-          .from(storageBucket("humor-images"))
-          .download(p.imagePath);
+        const { data, error } = await downloadStoredFile(
+          db!,
+          "humor-images",
+          p.imagePath,
+        );
         if (error || !data) throw new Error("Missing image");
         return Buffer.from(await data.arrayBuffer());
       })();

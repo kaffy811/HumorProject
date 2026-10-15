@@ -1879,3 +1879,14 @@
 .member-shell .post-feedback{position:fixed;inset:auto auto 24px 50%;transform:translateX(-50%);max-width:calc(100vw - 32px);width:max-content;z-index:100;display:flex;align-items:center;gap:14px}.post-feedback a{color:var(--color-ink);font-weight:800;text-decoration:underline}.comments-panel.is-empty{height:auto;max-height:none}.comments-panel.is-empty .comments-scroll{flex:0 0 auto;overflow:visible;max-height:none;padding-bottom:12px}.comments-panel.is-empty .comment-composer{position:static;inset:auto;margin-top:0}.keep-going-cards{grid-template-columns:repeat(3,minmax(300px,1fr));align-items:start}.keep-going-cards>.post-card{min-width:300px}.keep-going-cards .post-author-name{overflow:visible;white-space:normal;overflow-wrap:anywhere;text-overflow:clip}.keep-going-cards .post-meta{white-space:nowrap;flex-wrap:nowrap}.keep-going-cards .post-caption{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;padding:0;margin:18px 16px;line-height:1.4;max-height:4.2em}.direction-field textarea{width:100%;border:2px solid var(--color-ink);background:var(--color-paper);min-height:100px;padding:12px;color:var(--color-ink)}
 @media(max-width:1023px){.keep-going-cards{display:flex;overflow-x:auto;max-width:100%;gap:24px;padding-bottom:8px}.keep-going-cards>.post-card{flex:0 0 300px}}@media(max-width:767px){.member-shell .post-feedback{bottom:calc(96px + env(safe-area-inset-bottom));font-size:12px}}.member-shell,.member-shell main{min-width:0} .member-shell p,.member-shell h1,.member-shell h2{overflow-wrap:anywhere}
 .comments-panel.is-empty{min-height:0}.profile-fields-form input:focus{outline:1px solid var(--color-ink);outline-offset:3px;border-color:var(--color-ink)}
+
+/* Reserve equal space for the outward rank badges on both sides. */
+.leaderboard-podium { padding-inline:24px; }
+@media(max-width:767px) { .leaderboard-podium {align-items:center;padding-inline:24px;} .podium-rank-2,.podium-rank-3 {align-self:center;} }
+@media(min-width:1024px) and (max-width:1095px) { .post-detail-page {padding-inline:0;} }
+
+.profile-edit-dialog .profile-fields-form label {display:flex;flex-direction:column;gap:7px;}
+.profile-edit-dialog .profile-fields-form input {margin:0;padding:12px;}
+.profile-edit-dialog .profile-fields-form :focus-visible {outline:1px solid var(--color-ink);outline-offset:3px;box-shadow:none;}
+
+.create-page {padding-bottom:48px;}

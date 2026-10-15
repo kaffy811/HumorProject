@@ -8,7 +8,7 @@ export async function requireMember(complete = true) {
   const { data: profile, error } = await db
     .from("profiles")
     .select(
-      "first_name,last_name,username,avatar_path,onboarded_at",
+      "first_name,last_name,username,avatar_path,onboarded_at,updated_at",
     )
     .eq("id", user.id)
     .maybeSingle();

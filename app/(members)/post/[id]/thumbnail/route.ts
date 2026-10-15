@@ -1,4 +1,4 @@
-import {storageBucket} from "@/lib/supabase/schema";
+import { downloadStoredFile } from "@/lib/media/preview-storage";
 import { publicPost, publicAdmin } from "@/lib/post-public";
 import { mockEnabled } from "@/lib/studio-server";
 import { readFile } from "node:fs/promises";
@@ -14,9 +14,7 @@ export async function GET(
       ? await readFile(`${process.cwd()}/public/baby/locked-preview.webp`)
       : await (async () => {
           if (!p.thumbnailPath) return null;
-          const { data, error } = await publicAdmin()
-            .storage.from(storageBucket("humor-previews"))
-            .download(p.thumbnailPath);
+          const { data, error } = await downloadStoredFile(publicAdmin(), "humor-previews", p.thumbnailPath);
           if (error || !data) return null;
           return Buffer.from(await data.arrayBuffer());
         })();

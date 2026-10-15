@@ -16,7 +16,7 @@ export function mockLeaderboard(
 ): LeaderboardData {
   const now = new Date(),
     start = windowStart(window, now),
-    key = `${owner}:${window}:${start}`;
+    key = `${owner}:${window}:rolling-v2`;
   let snap = state.humorMockRanks!.get(key);
   // Deletions invalidate immediately, even when the removed post was below the top 50.
   let cursor: string | null = null;

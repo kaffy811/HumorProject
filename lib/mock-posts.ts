@@ -21,6 +21,7 @@ type Session = {
   saveRequests: Map<string, { id: string; viewerHasSaved: boolean }>;
   cutoff: string;
   added?: boolean;
+  savedHintSeen?: boolean;
   requests: Map<string, { haCount: number; viewerHasHa: boolean }>;
 };
 const state = globalThis as typeof globalThis & {
@@ -55,8 +56,12 @@ function session(user: string) {
         ] as Post["style"],
         author: {
           id: i % 5 === 0 ? user : `mock-author-${i % 4}`,
-          username:i%5===0?"you":["sam","alex","morgan","jules"][i%4],
-          name: i % 5 === 0 ? "@you" : ["@sam", "@alex", "@morgan", "@jules"][i % 4],
+          username:
+            i % 5 === 0 ? "you" : ["sam", "alex", "morgan", "jules"][i % 4],
+          name:
+            i % 5 === 0
+              ? "@you"
+              : ["@sam", "@alex", "@morgan", "@jules"][i % 4],
           avatarUrl: null,
         },
         createdAt: new Date(now - (i + 1) * 3600000).toISOString(),
@@ -96,7 +101,12 @@ export function mockList(
             ? p.author.id === user
             : true,
       )
-      .sort((a,b)=>sort==="saved"?(s.saves.get(b.id)||0)-(s.saves.get(a.id)||0)||b.id.localeCompare(a.id):compareFeed(a,b,sort));
+      .sort((a, b) =>
+        sort === "saved"
+          ? (s.saves.get(b.id) || 0) - (s.saves.get(a.id) || 0) ||
+            b.id.localeCompare(a.id)
+          : compareFeed(a, b, sort),
+      );
     snapshots.set(key, {
       owner: user,
       sort,
@@ -115,6 +125,9 @@ export function mockList(
     }),
     nextCursor:
       offset + limit < snapshot.ids.length ? `${key}:${offset + limit}` : null,
+    snapshotId: key,
+    totalCount: snapshot.ids.length,
+    totalPages: Math.max(1, Math.ceil(snapshot.ids.length / 9)),
     cutoff: snapshot.cutoff,
     mode: "mock",
   };
@@ -146,7 +159,9 @@ export function mockAction(
     p.viewerHasSaved = !p.viewerHasSaved;
     if (p.viewerHasSaved) s.saves.set(id, Date.now());
     else s.saves.delete(id);
-    const result = { viewerHasSaved: p.viewerHasSaved };
+    const showSavedHint = p.viewerHasSaved && !s.savedHintSeen;
+    if (showSavedHint) s.savedHintSeen = true;
+    const result = { viewerHasSaved: p.viewerHasSaved, showSavedHint };
     if (requestKey) s.saveRequests.set(requestKey, { id, ...result });
     return result;
   }
@@ -175,7 +190,12 @@ export function mockCheck(user: string, since: string) {
       haCount: 40,
       viewerHasHa: false,
       viewerHasSaved: false,
-      author: { id: "mock-sam", name: "Sam", avatarUrl: null },
+      author: {
+        id: "mock-sam",
+        username: "sam",
+        name: "@sam",
+        avatarUrl: null,
+      },
     });
   }
   return s.posts.filter((p) => Date.parse(p.createdAt) > Date.parse(since))
@@ -188,3 +208,26 @@ export function mockCommentCount(user: string, id: string, count: number) {
   const p = mockGet(user, id);
   if (p) p.commentCount = count;
 }
+export function mockPublish(
+  owner: string,
+  fields: Pick<
+    Post,
+    "imageUrl" | "imageWidth" | "imageHeight" | "caption" | "style"
+  >,
+) {
+  const s = session(owner),
+    post: Post = {
+      ...fields,
+      id: randomUUID(),
+      createdAt: new Date().toISOString(),
+      author: { id: owner, username: "you", name: "@you", avatarUrl: null },
+      haCount: 0,
+      commentCount: 0,
+      viewerHasHa: false,
+      viewerHasSaved: false,
+    };
+  s.posts.unshift(post);
+  return post;
+}
+
+export function mockUpdateAuthor(owner:string,author:Post['author']){for(const p of session(owner).posts){if(p.author.id===author.id)p.author={...p.author,...author};}}

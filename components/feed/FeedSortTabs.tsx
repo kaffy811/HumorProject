@@ -16,7 +16,8 @@ export function FeedSortTabs({ sort }: { sort: PostSort }) {
             if (value === sort) return;
             feed.getState().remember(value, 0, feed.getState().pages[value]);
             const next = new URLSearchParams(q.toString());
-            next.set("sort", value);
+            next.set("sort", value); next.set("page","1");
+            document.getElementById("feed-list")?.scrollIntoView({behavior:"instant",block:"start"});
             window.history.replaceState(null, "", `/feed?${next}`);
           }}
         >

@@ -1,3 +1,4 @@
+import { ensurePreviewProfile } from "@/lib/preview-profile";
 import { dataSchema } from "@/lib/supabase/schema";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
@@ -45,6 +46,7 @@ export async function finishAuth(request: NextRequest, mode: "code" | "email") {
       new URL("/?error=google", request.url).toString(),
     );
   } else {
+    await ensurePreviewProfile(user!.id);
     const { data: profile, error } = await db
       .from("profiles")
       .select("first_name,last_name,username,avatar_path,onboarded_at")

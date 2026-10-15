@@ -59,7 +59,7 @@ function session(user: string, postId?: string) {
           author:
             i === 1
               ? { ...p.author }
-              : { id: "mock-reader", name: "Sam", avatarUrl: null },
+              : { id: "mock-reader", name: "@sam", avatarUrl: null },
           createdAt: new Date(Date.now() - i * 60000).toISOString(),
           haCount: i % 3,
           viewerHasHa: false,
@@ -156,11 +156,11 @@ export function mockCommentAdd(
     id: randomUUID(),
     postId,
     body: body.trim(),
-    author: { id: user, name: "You", avatarUrl: null },
+    author: { id: user, name: "@you", avatarUrl: null },
     createdAt: new Date(now).toISOString(),
     haCount: 0,
     viewerHasHa: false,
-    replyTo: target ? { id: target.id, authorName: target.author.name } : null,
+    replyTo: target ? { id: target.id, authorName: target.author.name,authorId:target.author.id } : null,
   };
   s.comments.push(c);
   s.times.push(now);

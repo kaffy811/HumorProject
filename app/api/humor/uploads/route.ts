@@ -1,3 +1,5 @@
+import {mockEnabled} from "@/lib/studio-server";
+import {reserveMockDraft} from "@/lib/mock-create";
 import { storageBucket } from "@/lib/supabase/schema";
 import { imageError, IMAGE_MIMES } from "@/lib/create-contracts";
 import {
@@ -19,6 +21,7 @@ export async function POST(request: Request) {
       throw new StudioError("Choose a JPG, PNG, WebP or GIF under 10 MB.");
     const invalid = imageError({ type: input.mimeType, size: input.bytes });
     if (invalid) throw new StudioError(invalid);
+    if(mockEnabled())return Response.json(reserveMockDraft(user.id,input.mimeType,input.bytes));
     const extension = input.mimeType.split("/")[1];
     const { data: uploadId, error } = await admin.rpc("create_humor_draft", {
       owner: user.id,

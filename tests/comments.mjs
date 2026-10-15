@@ -80,7 +80,7 @@ const reply = mock.mockCommentAdd(
   result.comment.id,
   "request2",
 );
-assert.equal(reply.comment.replyTo.authorName, "You");
+assert.equal(reply.comment.replyTo.authorName, "@you");
 assert.throws(
   () =>
     mock.mockCommentAdd(

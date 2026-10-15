@@ -1,4 +1,4 @@
-import { storageBucket } from "@/lib/supabase/schema";
+import { downloadStoredFile } from "@/lib/media/preview-storage";
 import { dataSchema } from "@/lib/supabase/schema";
 import "server-only";
 import sharp from "sharp";
@@ -29,7 +29,7 @@ export async function postsContext(complete = true) {
   return {
     user,
     admin: createClient(config().url, secret, {
-      db: {schema: dataSchema()},
+      db: { schema: dataSchema() },
       auth: { persistSession: false, autoRefreshToken: false },
     }),
     mock,
@@ -96,9 +96,11 @@ export async function fetchPostPage(
       let width = raw.imageWidth,
         height = raw.imageHeight;
       if (!width || !height) {
-        const file = await ctx.admin.storage
-          .from(storageBucket("humor-images"))
-          .download(raw.imagePath);
+        const file = await downloadStoredFile(
+          ctx.admin,
+          "humor-images",
+          raw.imagePath,
+        );
         if (file.data) {
           try {
             const m = await sharp(
@@ -122,7 +124,12 @@ export async function fetchPostPage(
       return {
         id: raw.id,
         caption: raw.caption,
-        style: raw.style === "HANDMADE" ? "HANDMADE" : validStyle(raw.style) ? raw.style : "Deadpan",
+        style:
+          raw.style === "HANDMADE"
+            ? "HANDMADE"
+            : validStyle(raw.style)
+              ? raw.style
+              : "Deadpan",
         createdAt: raw.createdAt,
         imageWidth: width || 800,
         imageHeight: height || 800,

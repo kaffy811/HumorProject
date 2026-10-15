@@ -1,3 +1,4 @@
+import { ensurePreviewFile } from "@/lib/media/preview-storage";
 import { storageBucket } from "@/lib/supabase/schema";
 import { postsContext } from "@/lib/posts-server";
 import { activeComment, commentFailure } from "@/lib/comments-server";
@@ -17,6 +18,7 @@ export async function GET(
       .maybeSingle();
     if (error) throw error;
     if (!p?.avatar_path) throw new StudioError("Image not found.", 404);
+    await ensurePreviewFile(ctx.admin,"humor-avatars",p.avatar_path);
     const { data, error: se } = await ctx.admin.storage
       .from(storageBucket("humor-avatars"))
       .createSignedUrl(p.avatar_path, 300);

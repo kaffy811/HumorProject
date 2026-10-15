@@ -45,7 +45,7 @@ export function UserMenu({ author }: { author: Author }) {
         {author.avatarUrl ? (
           <img src={author.avatarUrl} alt="" width={38} height={38} />
         ) : (
-          <span>{author.name.slice(0, 1)}</span>
+          <span>{author.name.replace(/^@/, "").slice(0, 1).toUpperCase()}</span>
         )}
         {!!notifications?.unreadCount && (
           <span className="notification-badge" aria-hidden="true">

@@ -1,6 +1,7 @@
 begin;
 alter table public.profiles add column saved_hint_seen_at timestamptz;
 update public.profiles p set saved_hint_seen_at=now() where exists(select 1 from public.humor_saves s where s.user_id=p.id);
+update public.humor_captions set og_path=null;
 revoke update(display_name) on public.profiles from authenticated;
 create or replace function public.humor_author(author_id uuid) returns jsonb language sql stable security definer set search_path='' as $$
  select jsonb_build_object('id',p.id,'username',coalesce(p.username,'member_'||left(p.id::text,8)),'name','@'||coalesce(p.username,'member_'||left(p.id::text,8)),'avatarUrl',case when p.is_official then '/baby/bust/smirk.png' when p.avatar_path is not null then '/api/profiles/'||p.id::text||'/avatar?v='||extract(epoch from p.updated_at)::text else null end,'isOfficial',p.is_official) from public.profiles p where p.id=author_id
@@ -25,6 +26,7 @@ begin
  if avatar_action='upload' then select storage_path into photo from public.humor_avatar_uploads u where u.id=upload_id and u.user_id=owner and u.expires_at>now() for update;if not found then raise exception 'Avatar preview expired';end if;end if;
  update public.profiles set first_name=trim(first),last_name=trim(last),username=handle,avatar_path=case when avatar_action='remove' then null when avatar_action='upload' then photo else avatar_path end where id=owner;
  if not found then raise exception 'Profile not found';end if;
+ update public.humor_captions c set og_path=null from public.humor_images i where c.image_id=i.id and i.user_id=owner;
  if avatar_action='upload' then delete from public.humor_avatar_uploads where id=upload_id and user_id=owner;end if;
 end $$;
 create function public.humor_paged_feed(owner uuid,ordering text,page_number int default 1,snapshot_id uuid default null) returns jsonb language plpgsql security definer set search_path='' as $$
@@ -58,7 +60,7 @@ begin
   if not found then raise exception 'Feed snapshot expired'; end if;
  end if;
  select coalesce(jsonb_agg(q.body order by q.pos),'[]'::jsonb) into rows from (
-  select selected.pos,jsonb_build_object('id',c.id,'caption',c.content,'style',c.style,'createdAt',c.created_at,'imageId',i.id,'imagePath',i.storage_path,'imageWidth',i.image_width,'imageHeight',i.image_height,'author',public.humor_author(i.user_id),'authorId',i.user_id,'authorName',coalesce(nullif(trim(concat_ws(' ',p.first_name,p.last_name)),''),p.username,'Member'),'avatarPath',p.avatar_path,'haCount',(select count(*) from public.humor_votes v where v.caption_id=c.id and v.value=1),'viewerHasHa',exists(select 1 from public.humor_votes v where v.caption_id=c.id and v.user_id=owner and v.value=1),'viewerHasSaved',exists(select 1 from public.humor_saves s where s.caption_id=c.id and s.user_id=owner),'commentCount',(select count(*) from public.humor_comments m where m.caption_id=c.id and m.deleted_at is null)) body
+  select selected.pos,jsonb_build_object('id',c.id,'caption',c.content,'style',c.style,'createdAt',c.created_at,'imageId',i.id,'imagePath',i.storage_path,'imageWidth',i.image_width,'imageHeight',i.image_height,'author',public.humor_author(i.user_id),'authorId',i.user_id,'authorName','@'||coalesce(p.username,'member_'||left(p.id::text,8)),'avatarPath',p.avatar_path,'haCount',(select count(*) from public.humor_votes v where v.caption_id=c.id and v.value=1),'viewerHasHa',exists(select 1 from public.humor_votes v where v.caption_id=c.id and v.user_id=owner and v.value=1),'viewerHasSaved',exists(select 1 from public.humor_saves s where s.caption_id=c.id and s.user_id=owner),'commentCount',(select count(*) from public.humor_comments m where m.caption_id=c.id and m.deleted_at is null)) body
   from unnest(snap.post_ids) with ordinality selected(id,pos) join public.humor_captions c on c.id=selected.id join public.humor_images i on i.id=c.image_id left join public.profiles p on p.id=i.user_id
   where selected.pos>page_offset and selected.pos<=page_offset+page_limit and c.deleted_at is null and i.status='ready' and (ordering<>'saved' or exists(select 1 from public.humor_saves s where s.caption_id=c.id and s.user_id=owner))
  ) q;

@@ -115,7 +115,7 @@ export function CommentItem({
             onError={() => setAvatarFailed(author.avatarUrl)}
           />
         ) : (
-          <span aria-hidden="true">{author.name.slice(0, 1)}</span>
+          <span aria-hidden="true">{author.name.replace(/^@/, "").slice(0, 1).toUpperCase()}</span>
         )}
       </div>
       <div className="comment-content">
@@ -131,7 +131,7 @@ export function CommentItem({
         </div>
         <p className="comment-body">
           {comment.replyTo && (
-            <span className="comment-mention">@{replyAuthor.name} </span>
+            <span className="comment-mention">{replyAuthor.name.startsWith("@")?replyAuthor.name:`@${replyAuthor.name}`} </span>
           )}
           {comment.body}
         </p>
