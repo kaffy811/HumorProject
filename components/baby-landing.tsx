@@ -8,7 +8,7 @@ import {
   useAnimationControls,
   useReducedMotion,
 } from "framer-motion";
-import { createClient } from "@/lib/supabase/client";
+import { googleSignInUrl } from "@/lib/start-google-sign-in";
 import {
   babyReducer,
   babyView,
@@ -114,18 +114,11 @@ export function BabyLanding({
     );
     const started = Date.now();
     try {
-      const { data, error } = await createClient().auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${location.origin}/auth/callback`,
-          skipBrowserRedirect: true,
-        },
-      });
-      if (error || !data.url) throw error || new Error("Missing sign-in URL");
+      const url = await googleSignInUrl();
       const remaining = (reduce ? 250 : 1150) - (Date.now() - started);
       if (remaining > 0)
         await new Promise((resolve) => setTimeout(resolve, remaining));
-      window.location.assign(data.url);
+      window.location.assign(url);
     } catch {
       if (heartTimer.current) clearTimeout(heartTimer.current);
       dispatch({ type: "cancel" });

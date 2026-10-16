@@ -1,0 +1,13 @@
+# Complete Google sign-in before routing members
+
+Google verification now finishes before displaying the landing page again. OAuth codes arriving at `/` or legacy `/login` are forwarded to `/auth/callback`, preserving the code and optional PKCE flow ID. Normal sign-in still requests the exact `/auth/callback` URI without application query parameters. Landing-page sign-in overwrites abandoned return cookies with `/feed`; post sign-in retains its validated internal post destination.
+
+The callback verifies `getUser()` and JWT claims after attempting the code exchange. A missing or already-consumed code can recover an existing verified Google session. Unverified, anonymous, email-only, password-authenticated or mismatched identities remain blocked. Callback/temporary profile errors go to a dedicated retry screen instead of silently returning to the landing page or signing out an established session.
+
+Profiles with a username and first/last names go directly to `/feed`, regardless of whether the optional creation tutorial was skipped. Missing/incomplete profiles go directly to `/profile`; an existing post destination survives that step. Explicit first-profile completion still offers the existing creation welcome flow. The proxy no longer forces complete profiles back into that tutorial. Cookie refresh batches and redirect responses retain all session-cookie chunks, and transient verification errors offer retry rather than a misleading logged-out screen.
+
+Regression coverage exercises the real callback/proxy functions and Next.js response cookies with simulated Supabase results: new/complete profiles, nullable avatars, ordinary/post return paths, dot-segment and external targets, successful/reused/missing/thrown exchanges, failed verification, profile retry and multiple cookie batches. The client sign-in helper is checked for return-cookie preparation, Google-only OAuth and the exact callback URL. No credentials or callback codes are logged.
+
+Validation before release: lint, all existing and new tests, TypeScript and production build passed. Built-app HTTP checks verified root/legacy callback forwarding, missing-session routing to the retry page, public retry UI and anonymous member/API denial. Browser inspection of the actual retry page passed 375/768/1280px overflow checks and its Retry connection action stayed in the authentication flow. First-time profile scenarios use simulated profiles; no extra Google account was created for testing.
+
+No database migration, account creation, authentication-provider configuration or RLS change. ESLint now excludes ignored local acceptance bundles in `deliverables/`, matching its purpose as non-product output.

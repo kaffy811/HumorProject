@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { googleSignInUrl } from "@/lib/start-google-sign-in";
 export function GoogleSignIn({ returnTo }: { returnTo: string }) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
@@ -9,24 +9,10 @@ export function GoogleSignIn({ returnTo }: { returnTo: string }) {
     setBusy(true);
     setError("");
     try {
-      const saved = await fetch("/auth/return", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          target: returnTo + (location.hash === "#comments" ? "#comments" : ""),
-        }),
-      });
-      if (!saved.ok) throw new Error("Could not prepare sign-in. Try again.");
-      const { data, error } = await createClient().auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${location.origin}/auth/callback`,
-          skipBrowserRedirect: true,
-        },
-      });
-      if (error || !data.url)
-        throw new Error("Google sign-in did not finish. Try again.");
-      window.location.assign(data.url);
+      const url = await googleSignInUrl(
+        returnTo + (location.hash === "#comments" && !returnTo.includes("#") ? "#comments" : ""),
+      );
+      window.location.assign(url);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Sign-in stumbled. Try again.");
       setBusy(false);

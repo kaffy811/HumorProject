@@ -11,6 +11,8 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    // Local screenshots, QA bundles and private acceptance exports.
+    "deliverables/**",
     "next-env.d.ts",
   ]),
 ]);

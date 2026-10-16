@@ -7,7 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test": "node tests/humor-validation.mjs && node tests/gemini-profile.mjs && node tests/moderation.mjs && node tests/baby-auth.mjs && node tests/create-flow.mjs && node tests/feed.mjs && node tests/content-cache.mjs && node tests/author-cache.mjs && node tests/comments.mjs && node tests/leaderboard.mjs && node tests/member-features.mjs",
+    "test": "node tests/humor-validation.mjs && node tests/gemini-profile.mjs && node tests/moderation.mjs && node tests/baby-auth.mjs && node tests/auth-callback.mjs && node tests/create-flow.mjs && node tests/feed.mjs && node tests/content-cache.mjs && node tests/author-cache.mjs && node tests/comments.mjs && node tests/leaderboard.mjs && node tests/member-features.mjs",
     "seed": "node --import tsx scripts/seed.ts"
   },
   "dependencies": {
