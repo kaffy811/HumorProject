@@ -1,0 +1,13 @@
+# Simplify profiles, hearts and detail interactions
+
+- Jokes and People retain their podiums and complete lower lists. Only the visible rank prefixes on rows after the podium are removed; underlying ranks, ordering and personal standings stay intact.
+- Upload previews remain blurred until the upload completion endpoint succeeds, then clear. Failed uploads retain the preview and retry action.
+- Shared setup/edit forms collect only an optional avatar and username. All application profile reads, completeness gates and DTOs retire first/last names. Existing stored name columns remain untouched for migration compatibility; names are no longer displayed, collected, returned in profile summaries or required for upload/voting. Profile saves use a service-only username/avatar RPC, retaining username availability and uniqueness checks, existing avatar choices and all other profile fields.
+- Avatar selection shows a round, automatically centered preview; there are no crop sliders. Existing client center cropping, orientation handling and server compression to 256×256 WebP remain.
+- Post, leaderboard and comment likes use outline/filled hearts. A newly clicked like briefly shows the existing tiny pouting mascot within the icon, fading into the red heart. Reduced motion skips the flourish. Optimistic updates, locks, rollback, counts and shared cache behavior remain.
+- Detail cards have no image-overlay actions. The same like/save logic is rendered as two buttons immediately above Comments; feed/recommendation cards retain their image controls.
+- New comment chains are limited to three levels (root = 1). UI reply actions show a visible toast before attempting level four; APIs and a database trigger also reject it. Depth counts soft-deleted ancestors. Legacy deep conversations remain readable; new replies cannot extend them. Draft restoration, pagination, notification targets and rate limits remain.
+
+Before the live migration, all 24 application tables plus data/functions/triggers/RLS/grants were exported from the named Humor Project into an ignored private backup. Auth and Storage remain external dependencies. That fresh backup was restored into in-memory PostgreSQL and the migration passed username-only save/summary/upload/vote and comment depth/privacy checks before application. No live user/post/comment rows were removed or seeded by the migration.
+
+Validation: full tests, lint, TypeScript and production build; fresh-backup database rehearsal; actual-component read-only fixtures at 1280/768/375px show no horizontal overflow, no name inputs/sliders, two detail controls outside the image, and upload blur clearing only after completion. Live browser acceptance is recorded separately after release.

@@ -13,9 +13,6 @@ export function JokeRankRow({ post }: { post: RankedPost }) {
       className={`leaderboard-row ${own ? "is-own" : ""}`}
       data-standing-post={post.id}
     >
-      <span className="rank-number" aria-label={`Rank ${post.rank}`}>
-        {post.rank}
-      </span>
       <Link className="rank-row-main" href={`/post/${post.id}`}>
         <img
           className="rank-thumbnail"
@@ -47,9 +44,6 @@ export function PeopleRankRow({ person }: { person: RankedPerson }) {
       className={`leaderboard-row ${own ? "is-own" : ""}`}
       data-standing-user={person.user.id}
     >
-      <span className="rank-number" aria-label={`Rank ${person.rank}`}>
-        {person.rank}
-      </span>
       <Link className="rank-row-main" href={`/u/${person.user.id}`}>
         <RankAvatar name={person.user.name} src={person.user.avatarUrl} />
         <div className="rank-copy">
@@ -60,7 +54,7 @@ export function PeopleRankRow({ person }: { person: RankedPerson }) {
       </Link>
       <div className="rank-score">
         <strong>{person.haReceived}</strong>
-        <span className="comic-label">Ha</span>
+        <span className="comic-label">Likes</span>
       </div>
     </li>
   );

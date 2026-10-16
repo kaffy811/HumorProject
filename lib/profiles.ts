@@ -25,8 +25,6 @@ export function listProfilePosts(id: string, cursor?: string | null) {
 }
 export type ProfileValues = {
   username: string;
-  firstName: string;
-  lastName: string;
   avatarAction: "keep" | "remove" | "google" | "upload";
   avatarUploadId?: string;
 };
@@ -48,7 +46,7 @@ export async function usernameAvailable(
 }
 export async function stageAvatar(
   file: File,
-  crop: { x: number; y: number; size: number },
+  crop?: { x: number; y: number; size: number },
 ) {
   const form = new FormData();
   form.set("photo", await cropAvatarFile(file, crop));

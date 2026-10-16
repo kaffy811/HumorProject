@@ -8,6 +8,7 @@ import { relativeTime, REPORT_REASONS } from "@/lib/post-contracts";
 import { toggleCommentHa, reportComment } from "@/lib/comments";
 import { PostDialog } from "@/components/posts/PostDialog";
 import { usePostFeedback } from "@/components/feed/FeedCacheProvider";
+import { HeartGlyph } from "@/components/posts/HeartGlyph";
 export function CommentItem({
   comment,
   viewerId,
@@ -32,6 +33,7 @@ export function CommentItem({
     avatarUrl: null,
   });
   const [busy, setBusy] = useState(false),
+    [burst, setBurst] = useState(0),
     [dialog, setDialog] = useState<"delete" | "report" | null>(null),
     [reason, setReason] = useState<string>(REPORT_REASONS[0]),
     [error, setError] = useState(""),
@@ -54,6 +56,7 @@ export function CommentItem({
     if (lock.current || pending) return;
     lock.current = true;
     setBusy(true);
+    if (!comment.viewerHasHa) setBurst(n => n + 1);
     if (!reduced)
       void controls.start({
         scaleY: [1, 0.9, 1],
@@ -72,7 +75,7 @@ export function CommentItem({
     } catch (e) {
       await onPatch(previous);
       notify(
-        e instanceof Error ? e.message : "Your Ha didn’t stick. Try again.",
+        e instanceof Error ? e.message : "Your like didn’t stick. Try again.",
       );
     } finally {
       lock.current = false;
@@ -101,6 +104,7 @@ export function CommentItem({
   return (
     <article
       id={`comment-${comment.id}`}
+      data-comment-depth={comment.depth}
       className={`comment-item ${highlighted ? "is-highlighted" : ""}`}
       aria-busy={pending}
     >
@@ -141,10 +145,11 @@ export function CommentItem({
             transition={{ duration: 0.25 }}
             onClick={() => void ha()}
             aria-pressed={comment.viewerHasHa}
-            className={comment.viewerHasHa ? "is-active" : ""}
+            aria-label={comment.viewerHasHa ? "Unlike comment" : "Like comment"}
+            className={`comment-like ${comment.viewerHasHa ? "is-active" : ""}`}
             disabled={busy || pending}
           >
-            Ha · {comment.haCount}
+            <HeartGlyph active={comment.viewerHasHa} burst={burst} /> <span>{comment.haCount}</span>
           </motion.button>
           <button onClick={onReply} disabled={pending}>
             Reply

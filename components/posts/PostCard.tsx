@@ -163,7 +163,7 @@ export function PostCard(props: Props) {
             {image}
           </Link>
         )}
-        {!preview && (
+        {!preview && !detail && (
           <PostActions
             post={post}
             onUpdate={props.onUpdate}

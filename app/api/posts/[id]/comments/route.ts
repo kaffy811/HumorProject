@@ -4,7 +4,7 @@ import { sameOrigin } from "@/lib/humor-validation";
 import { validUuid } from "@/lib/create-contracts";
 import { readJson, StudioError } from "@/lib/studio-server";
 import { commentFailure } from "@/lib/comments-server";
-import { validateComment, type CommentSort } from "@/lib/comment-contracts";
+import { validateComment, COMMENT_DEPTH_ERROR, MAX_COMMENT_DEPTH, type CommentSort } from "@/lib/comment-contracts";
 import { mockCommentsList, mockCommentAdd } from "@/lib/mock-comments";
 export async function GET(
   request: Request,
@@ -91,6 +91,11 @@ export async function POST(
         ),
       );
     await activePost(ctx, id);
+    if (input.replyToId) {
+      const depth = await ctx.admin.rpc("humor_comment_depth", { comment_id: input.replyToId });
+      if (depth.error) throw depth.error;
+      if (depth.data >= MAX_COMMENT_DEPTH) throw new StudioError(COMMENT_DEPTH_ERROR);
+    }
     const { data, error } = await ctx.admin.rpc("add_humor_comment", {
       post_id: id,
       owner: ctx.user.id,

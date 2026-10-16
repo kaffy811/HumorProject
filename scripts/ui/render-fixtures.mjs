@@ -43,8 +43,6 @@ const profile = {
   id: viewer,
   name: "@local_student",
   username: "local_student",
-  firstName: "Local",
-  lastName: "Fixture",
   avatarUrl: null,
   googlePhotoUrl: null,
   joinedAt: "2026-10-01T12:00:00Z",
@@ -291,6 +289,8 @@ const views = [
   "profile",
   "create",
   "writing",
+  "upload-pending",
+  "upload-ready",
   "handmade",
   "detail",
   "notifications",
@@ -323,7 +323,7 @@ for (const view of views) {
   );
   createState = { ...types.initialState, dispatch: noop };
   let element;
-  if (["create", "writing", "handmade"].includes(view)) {
+  if (["create", "writing", "handmade", "upload-pending", "upload-ready"].includes(view)) {
     if (view !== "create")
       createState = {
         ...createState,
@@ -340,6 +340,10 @@ for (const view of views) {
         draftId: "fixture",
         handmadeText: "An expensive coffee. A cheap personality.",
       };
+    if (view.startsWith("upload-")) createState = {
+      ...createState,step:1,phase:view === "upload-pending" ? "uploading" : "ready",
+      image:{...createState.image,uploadId:view === "upload-pending" ? null : "fixture"},
+    };
     element = React.createElement(
       load("components/create/CreateFlow.tsx").CreateFlow,
       { author: profile, welcome: true },

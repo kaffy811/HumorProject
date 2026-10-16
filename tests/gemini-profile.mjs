@@ -1,7 +1,6 @@
 import assert from'node:assert/strict';import{readFileSync}from'node:fs';import ts from'typescript';
 function load(file,deps={}){const m={exports:{}};new Function('module','exports','require',ts.transpile(readFileSync(file,'utf8'),{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}))(m,m.exports,id=>deps[id]||{});return m.exports;}
-const contracts=load('lib/create-contracts.ts'),gemini=load('lib/gemini.ts',{'./create-contracts':contracts}),{namesFrom}=load('lib/profile-validation.ts');
-assert.deepEqual(namesFrom({firstName:' Sam ',lastName:'李'}),{first_name:'Sam',last_name:'李'});for(const firstName of['','x'.repeat(81),'a\x00'])assert.throws(()=>namesFrom({firstName,lastName:'X'}));
+const contracts=load('lib/create-contracts.ts'),gemini=load('lib/gemini.ts',{'./create-contracts':contracts});
 const good={captions:['deadpan','roast','pun','absurd'].map((style,i)=>({caption:`Different joke ${i}.`,style}))};
 for(const captions of[good.captions.slice(0,3),[...good.captions,good.captions[0]],good.captions.map((c,i)=>i?c:{...c,caption:' '}),good.captions.map((c,i)=>i?c:{...c,caption:'毛'.repeat(201)}),good.captions.map((c,i)=>i?c:{...c,style:'handmade'}),good.captions.map(c=>({...c,style:'roast'}))])assert.throws(()=>gemini.validateCaptions({captions}));
 assert.equal(gemini.validateCaptions({...good,captions:good.captions.map((c,i)=>i?c:{...c,caption:'毛'.repeat(200)})})[0].caption.length,200);

@@ -24,8 +24,6 @@ export function ProfileForm({
       <ProfileFieldsForm
         initial={{
           username: profile?.username || "",
-          firstName: profile?.first_name || "",
-          lastName: profile?.last_name || "",
           avatarUrl,
           googlePhotoUrl,
         }}

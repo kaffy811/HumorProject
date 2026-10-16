@@ -9,7 +9,7 @@ export default async function CreatePage({
   const { db, user } = await memberAuth();
   const { data: profile } = await db
     .from("profiles")
-    .select("first_name,last_name,username,avatar_path,onboarded_at,updated_at")
+    .select("username,avatar_path,onboarded_at,updated_at")
     .eq("id", user!.id)
     .maybeSingle();
   const query = await searchParams;

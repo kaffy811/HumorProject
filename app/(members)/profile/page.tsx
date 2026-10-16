@@ -12,8 +12,8 @@ export default async function ProfilePage() {
       <h1>{onboarding ? "First, a proper introduction." : "Your profile."}</h1>
       <p className="page-intro">
         {onboarding
-          ? "Choose a username, add your name and optionally add a photo. Then your camera roll gets the mic."
-          : "Update your username, name or profile photo."}
+          ? "Choose a username and optionally add a photo. Then your camera roll gets the mic."
+          : "Update your username or profile photo."}
       </p>
       <ProfileForm
         profile={profile}

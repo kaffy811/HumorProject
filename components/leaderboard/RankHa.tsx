@@ -5,9 +5,11 @@ import { toggleHa } from "@/lib/posts";
 import { usePostCache } from "@/hooks/usePostCache";
 import { usePostFeedback } from "@/components/feed/FeedCacheProvider";
 import type { Post } from "@/lib/post-contracts";
+import { HeartGlyph } from "@/components/posts/HeartGlyph";
 export function RankHa({ post }: { post: Post }) {
   const locked = useRef(false),
     [busy, setBusy] = useState(false),
+    [burst, setBurst] = useState(0),
     controls = useAnimationControls(),
     reduced = useReducedMotion(),
     update = usePostCache(),
@@ -16,6 +18,7 @@ export function RankHa({ post }: { post: Post }) {
     if (locked.current) return;
     locked.current = true;
     setBusy(true);
+    if (!post.viewerHasHa) setBurst(n => n + 1);
     const previous = { haCount: post.haCount, viewerHasHa: post.viewerHasHa };
     if (!reduced)
       void controls.start({
@@ -31,7 +34,7 @@ export function RankHa({ post }: { post: Post }) {
     } catch (e) {
       await update(post, previous);
       notify(
-        e instanceof Error ? e.message : "Your Ha didn’t stick. Try again.",
+        e instanceof Error ? e.message : "Your like didn’t stick. Try again.",
       );
     } finally {
       locked.current = false;
@@ -41,7 +44,7 @@ export function RankHa({ post }: { post: Post }) {
   return (
     <motion.button
       className={`rank-ha ${post.viewerHasHa ? "is-active" : ""}`}
-      aria-label={`Ha for ${post.caption}`}
+      aria-label={`${post.viewerHasHa ? "Unlike" : "Like"} post: ${post.caption}`}
       aria-pressed={post.viewerHasHa}
       animate={controls}
       disabled={busy}
@@ -50,7 +53,7 @@ export function RankHa({ post }: { post: Post }) {
         void click();
       }}
     >
-      Ha
+      <HeartGlyph active={post.viewerHasHa} burst={burst} />
     </motion.button>
   );
 }

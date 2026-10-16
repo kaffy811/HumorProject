@@ -12,6 +12,9 @@ import type { CommentThread } from "@/lib/comment-threads";
 import { CommentItem } from "./CommentItem";
 import { CommentComposer } from "./CommentComposer";
 import { usePostFeedback } from "@/components/feed/FeedCacheProvider";
+import { PostActions } from "@/components/posts/PostActions";
+import { usePostCache } from "@/hooks/usePostCache";
+import { COMMENT_DEPTH_ERROR, MAX_COMMENT_DEPTH } from "@/lib/comment-contracts";
 export function CommentsPanel({
   post,
   viewerId,
@@ -22,6 +25,7 @@ export function CommentsPanel({
   input: RefObject<HTMLTextAreaElement | null>;
 }) {
   const panel = useRef<HTMLElement>(null);
+  const patchPost = usePostCache();
   const params = useSearchParams(),
     targetId = params.get("comment");
   const target = useSWR(
@@ -47,17 +51,27 @@ export function CommentsPanel({
     document.getElementById(`comment-${target.data.id}`)?.scrollIntoView({ block: "center", behavior: "instant" });
     input.current?.focus({ preventScroll: true });
   }, [target.data, conversations.parentsLoading, input]);
-  function renderThread(thread: CommentThread): React.ReactNode {
+  function renderThread(thread: CommentThread, level = 1): React.ReactNode {
     const c = thread.comment;
     return <li key={c.id} className="comment-thread">
       <CommentItem
         comment={c} viewerId={viewerId} op={post.author.id}
         highlighted={comments.highlighted.has(c.id) || c.id === target.data?.id}
-        onReply={() => { setReply(c); input.current?.focus(); }}
+        onReply={() => {
+          if (Math.max(c.depth || level, level) >= MAX_COMMENT_DEPTH) {
+            notify(COMMENT_DEPTH_ERROR);
+            return;
+          }
+          if (conversations.parentsLoading) {
+            notify("Replies are still loading. Try again in a moment.");
+            return;
+          }
+          setReply({ ...c, depth: c.depth || level }); input.current?.focus();
+        }}
         onDelete={async () => { await comments.remove(c); if(reply?.id === c.id) setReply(null); }}
         onPatch={change => comments.patch(c.id,change)}
       />
-      {!!thread.replies.length && <ul className="comment-replies" aria-label={`Replies to ${c.author.name}`}>{thread.replies.map(renderThread)}</ul>}
+      {!!thread.replies.length && <ul className="comment-replies" aria-label={`Replies to ${c.author.name}`}>{thread.replies.map(child => renderThread(child, level + 1))}</ul>}
     </li>;
   }
   useEffect(() => {
@@ -90,6 +104,7 @@ export function CommentsPanel({
       className={`comments-panel ${!comments.loading&&!comments.comments.length?"is-empty":""}`}
       aria-labelledby="comments-title"
     >
+      <PostActions post={post} placement="comments" onUpdate={change => patchPost(post, change)} />
       <header className="comments-heading">
         <h2 id="comments-title">
           Comments <span>{post.commentCount}</span>
@@ -112,7 +127,7 @@ export function CommentsPanel({
           {comments.announcement}
         </span>
         <ul className="comment-list">
-          {conversations.threads.map(renderThread)}
+          {conversations.threads.map(thread => renderThread(thread))}
         </ul>
         {conversations.parentError && <p className="comments-error" role="alert">Some replies could not be grouped. <button className="text-button" onClick={() => void conversations.retryParents().catch(() => {})}>Retry</button></p>}
         {comments.loading && (

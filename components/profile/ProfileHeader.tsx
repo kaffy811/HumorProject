@@ -35,7 +35,6 @@ export function ProfileHeader({
               <span className="host-label comic-label">HOST</span>
             )}
           </h1>
-          <p className="profile-real-name">{[profile.firstName,profile.lastName].filter(Boolean).join(" ")}</p>
           <p className="profile-joined">
             Joined{" "}
             {new Intl.DateTimeFormat("en-US", {
@@ -57,7 +56,7 @@ export function ProfileHeader({
           <dd>{profile.postCount}</dd>
         </div>
         <div>
-          <dt>Ha received</dt>
+          <dt>Likes received</dt>
           <dd>{profile.haReceived}</dd>
         </div>
         <div>

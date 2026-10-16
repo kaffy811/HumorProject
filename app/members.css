@@ -1929,3 +1929,21 @@
 .comment-replies .comment-avatar {flex-basis:26px;}
 .comment-replies .comment-avatar :is(img,span) {width:26px;height:26px;}
 @media(max-width:639px){.comment-replies{margin-left:10px;padding-left:10px;}.comment-replies .comment-replies{padding-left:6px;}.comment-replies .comment-replies .comment-replies{padding-left:0;}.post-card.is-detail .post-caption{padding-inline:16px;font-size:26px;}}
+
+/* Upload previews stay visibly pending until Storage confirms the upload. */
+.image-preview { overflow:hidden; }
+.image-preview > img { transition:filter .3s ease,opacity .3s ease; }
+.image-preview.is-upload-pending > img { filter:blur(10px);opacity:.7; }
+.heart-glyph { position:relative;display:inline-grid;place-items:center;width:28px;height:28px;flex:0 0 28px;overflow:hidden;vertical-align:middle; }
+.heart-glyph > svg { grid-area:1/1; }
+.heart-glyph > img { position:absolute;inset:0;width:28px;height:28px;object-fit:cover;mix-blend-mode:multiply; }
+.member-shell .post-overlay-button.is-heart.is-active,.rank-ha.is-active { background:var(--color-paper); }
+.rank-ha { display:grid;place-items:center;padding:4px; }
+.post-detail-actions { display:flex;gap:12px;padding:0 0 20px;flex-shrink:0; }
+.post-detail-actions .post-overlay-button { display:flex;align-items:center;justify-content:center;gap:8px;width:auto;min-width:88px;padding:0 12px; }
+.comment-actions .comment-like { display:inline-flex;align-items:center;gap:5px; }
+.comment-like .heart-glyph { width:22px;height:22px;flex-basis:22px; }
+.comment-like .heart-glyph > svg { width:20px;height:20px; }
+.comment-like .heart-glyph > img { width:22px;height:22px; }
+.leaderboard-rows .leaderboard-row { padding-left:16px; }
+@media(prefers-reduced-motion:reduce){.image-preview > img{transition:none;}}

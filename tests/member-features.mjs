@@ -16,7 +16,7 @@ function load(file, deps = {}) {
 }
 const contracts = load("lib/create-contracts.ts");
 const validation = load("lib/profile-validation.ts");
-assert.deepEqual(validation.profileFieldsFrom({username:"  KAI_1  ",firstName:" Kai ",lastName:" Jones "}),{username:"kai_1",first_name:"Kai",last_name:"Jones"});
+assert.deepEqual(validation.profileFieldsFrom({username:"  KAI_1  ",firstName:" Kai ",lastName:" Jones "}),{username:"kai_1"});
 for(const username of ["","ab","a".repeat(25),"a-b","ab c","@name"]){assert.throws(()=>validation.profileFieldsFrom({username,firstName:"Kai",lastName:"Jones"}));}
 const seeds = load("lib/seed-validation.ts", {
   "./create-contracts": contracts,

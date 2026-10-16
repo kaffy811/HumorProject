@@ -69,7 +69,7 @@ export async function finishAuth(
     await ensurePreviewProfile(user.id);
     const { data: profile, error } = await db
       .from("profiles")
-      .select("first_name,last_name,username,avatar_path,onboarded_at")
+      .select("username,avatar_path,onboarded_at")
       .eq("id", user.id)
       .maybeSingle();
     if (error) return fail("profile");

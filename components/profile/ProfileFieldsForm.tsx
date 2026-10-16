@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- Local crop and trusted Google avatar preview. */
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { AvatarCropper } from "./AvatarCropper";
+import { AvatarPreview } from "./AvatarPreview";
 import { MAX_AVATAR_BYTES } from "@/lib/profile-contracts";
 import {
   saveProfile,
@@ -12,8 +12,6 @@ import {
 import type { MemberProfile } from "@/lib/profile-contracts";
 export interface ProfileFields {
   username: string;
-  firstName: string;
-  lastName: string;
   avatarUrl: string | null;
   googlePhotoUrl: string | null;
 }
@@ -31,13 +29,10 @@ export function ProfileFieldsForm({
   onBusyChange?: (busy: boolean) => void;
 }) {
   const [name, setName] = useState(initial.username),
-    [first, setFirst] = useState(initial.firstName),
-    [last, setLast] = useState(initial.lastName),
     [action, setAction] = useState<ProfileValues["avatarAction"]>(
       !initial.avatarUrl && initial.googlePhotoUrl ? "google" : "keep",
     ),
     [file, setFile] = useState<File | null>(null),
-    [crop, setCrop] = useState({ x: 0, y: 0, size: 0 }),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [availability, setAvailability] = useState<
@@ -73,11 +68,9 @@ export function ProfileFieldsForm({
     onBusyChange?.(true);
     setError("");
     try {
-      const avatar = file ? await stageAvatar(file, crop) : null;
+      const avatar = file ? await stageAvatar(file) : null;
       const value = await saveProfile({
         username: handle,
-        firstName: first,
-        lastName: last,
         avatarAction: avatar ? "upload" : action,
         avatarUploadId: avatar?.uploadId,
       });
@@ -124,7 +117,9 @@ export function ProfileFieldsForm({
           disabled={busy}
           onClick={() => input.current?.click()}
         >
-          {photo ? (
+          {file ? (
+            <AvatarPreview key={`${file.name}:${file.lastModified}`} file={file} />
+          ) : photo ? (
             <img src={photo} alt="Your profile photo" width={96} height={96} />
           ) : (
             <span aria-hidden="true">
@@ -165,13 +160,6 @@ export function ProfileFieldsForm({
           </button>
         </div>
         <p className="fine-print">Optional · JPG, PNG or WebP · up to 5 MB</p>
-        {file && (
-          <AvatarCropper
-            key={`${file.name}:${file.lastModified}`}
-            file={file}
-            onCrop={setCrop}
-          />
-        )}
       </div>
       <label>
         Username
@@ -206,30 +194,6 @@ export function ProfileFieldsForm({
                 : "3–24 letters, numbers or underscores."}
         </span>
       </label>
-      <label>
-        First name
-        <input
-          name="firstName"
-          autoComplete="given-name"
-          value={first}
-          onChange={(e) => setFirst(e.target.value)}
-          maxLength={80}
-          required
-          disabled={busy}
-        />
-      </label>
-      <label>
-        Last name
-        <input
-          name="lastName"
-          autoComplete="family-name"
-          value={last}
-          onChange={(e) => setLast(e.target.value)}
-          maxLength={80}
-          required
-          disabled={busy}
-        />
-      </label>
       {error && (
         <p role="alert" className="form-error">
           {error}
@@ -248,7 +212,7 @@ export function ProfileFieldsForm({
         )}
         <button
           className="comic-button is-primary"
-          disabled={busy || availability === "taken" || (!!file && !crop.size)}
+          disabled={busy || availability === "taken"}
         >
           {busy ? "Saving…" : submitLabel}
         </button>

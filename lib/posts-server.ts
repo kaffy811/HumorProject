@@ -14,7 +14,7 @@ export async function postsContext(complete = true) {
   if (!user) throw new StudioError("Sign in with Google to continue.", 401);
   const { data: profile, error } = await db
     .from("profiles")
-    .select("first_name,last_name,username,avatar_path")
+    .select("username,avatar_path")
     .eq("id", user.id)
     .maybeSingle();
   if (error) throw error;

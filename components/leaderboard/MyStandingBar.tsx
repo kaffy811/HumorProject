@@ -51,7 +51,7 @@ export function MyStandingBar({
             </>
           ) : (
             <strong>
-              You&apos;re #{rank} with {standing.haReceived} Ha.
+              You&apos;re #{rank} with {standing.haReceived} likes.
             </strong>
           )
         ) : (

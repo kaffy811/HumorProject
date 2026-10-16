@@ -75,7 +75,7 @@ export function ImageUpload({
         }}
       />
       {image ? (
-        <div className="image-preview">
+        <div className={`image-preview ${!image.uploadId ? "is-upload-pending" : ""}`} aria-busy={phase === "uploading"}>
           <img src={image.previewUrl} alt="Your selected photo" />
           <div className="image-tools">
             <button

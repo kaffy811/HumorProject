@@ -87,9 +87,10 @@ for (const scenario of [
   const response = await h.callback(request("/auth/callback?code=local-fixture", "/"), "code");
   assert.equal(location(response), "/feed");
 }
+assert.equal(location(await harness({profile:{...profile,first_name:null,last_name:null}}).callback(request("/auth/callback?code=fixture"),"code")),"/feed");
 for (const mode of ["code", "email", "resume"])
   assert.equal(location(await harness().callback(request("/auth/callback"), mode)), "/feed");
-for (const value of [null, { ...profile, username: null }, { ...profile, first_name: null }]) {
+for (const value of [null, { ...profile, username: null }]) {
   const r = await harness({ profile: value }).callback(request("/auth/callback?code=fixture", "/post/123#comments"), "code");
   assert.equal(location(r), "/profile");
   assert.equal(r.cookies.get(returns.RETURN_COOKIE), undefined, "New members retain the incoming post destination until profile setup finishes");

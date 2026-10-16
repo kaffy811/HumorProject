@@ -2,8 +2,6 @@ import type { Post } from "./post-contracts";
 export type PublicAuthor = Post["author"];
 export interface MemberProfile extends PublicAuthor {
   username: string;
-  firstName: string;
-  lastName: string;
   joinedAt: string;
   googlePhotoUrl?: string | null;
   onboardedAt: string | null;

@@ -5,18 +5,22 @@ import { motion, useAnimationControls, useReducedMotion } from "framer-motion";
 import type { Post } from "@/lib/post-contracts";
 import { toggleHa, toggleSave, PostError } from "@/lib/posts";
 import { usePostFeedback } from "@/components/feed/FeedCacheProvider";
+import { HeartGlyph } from "./HeartGlyph";
 export function PostActions({
   post,
   onUpdate,
   onComment,
   onOpen,
+  placement = "image",
 }: {
   post: Post;
+  placement?: "image" | "comments";
   onComment?: () => void;
   onOpen?: () => void;
   onUpdate: (change: Partial<Post> | null) => Promise<void>;
 }) {
   const [busyHa, setBusyHa] = useState(false),
+    [heartBurst, setHeartBurst] = useState(0),
     [busySave, setBusySave] = useState(false),
     lockHa = useRef(false),
     lockSave = useRef(false),
@@ -30,6 +34,7 @@ export function PostActions({
     lock.current = true;
     const setBusy = kind === "ha" ? setBusyHa : setBusySave;
     setBusy(true);
+    if (kind === "ha" && !post.viewerHasHa) setHeartBurst(n => n + 1);
     const previous =
       kind === "ha"
         ? { haCount: post.haCount, viewerHasHa: post.viewerHasHa }
@@ -57,7 +62,7 @@ export function PostActions({
         e instanceof PostError
           ? e.message
           : kind === "ha"
-            ? "Your Ha didn’t stick. Try again."
+            ? "Your like didn’t stick. Try again."
             : "The bookmark didn’t stick. Try again.",
       );
     } finally {
@@ -67,26 +72,27 @@ export function PostActions({
   }
   return (
     <div
-      className="post-image-actions"
+      className={placement === "comments" ? "post-detail-actions" : "post-image-actions"}
       data-post-controls
       onClick={(e) => e.stopPropagation()}
     >
       <div className="post-action-group">
         <motion.button
-          className={`post-overlay-button ${post.viewerHasHa ? "is-active" : ""}`}
-          aria-label="Ha"
+          className={`post-overlay-button is-heart ${post.viewerHasHa ? "is-active" : ""}`}
+          aria-label={post.viewerHasHa ? "Unlike post" : "Like post"}
           aria-pressed={post.viewerHasHa}
           disabled={busyHa}
           onClick={() => void toggle("ha")}
           animate={haControls}
         >
-          Ha
+          <HeartGlyph active={post.viewerHasHa} burst={heartBurst} />
+          {placement === "comments" && <span>{post.haCount}</span>}
         </motion.button>
-        <span className="post-action-count" aria-label={`${post.haCount} Ha`}>
+        {placement !== "comments" && <span className="post-action-count" aria-label={`${post.haCount} likes`}>
           {post.haCount}
-        </span>
+        </span>}
       </div>
-      <div className="post-action-group">
+      {placement !== "comments" && <div className="post-action-group">
         <Link
           className="post-overlay-button"
           aria-label={`Comments, ${post.commentCount}`}
@@ -113,7 +119,7 @@ export function PostActions({
         <span className="post-action-count" aria-hidden="true">
           {post.commentCount}
         </span>
-      </div>
+      </div>}
       <div className="post-action-group">
         <motion.button
           className={`post-overlay-button ${post.viewerHasSaved ? "is-active" : ""}`}
@@ -134,6 +140,7 @@ export function PostActions({
           >
             <path d="M6 3h12v18l-6-4-6 4V3Z" />
           </svg>
+          {placement === "comments" && <span>{post.viewerHasSaved ? "Saved" : "Save"}</span>}
         </motion.button>
       </div>
     </div>

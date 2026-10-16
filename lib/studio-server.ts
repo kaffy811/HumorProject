@@ -19,14 +19,14 @@ export async function studioContext(request: Request) {
   if (!user) throw new StudioError("Sign in with Google to continue.", 401);
   const { data: profile, error } = await db
     .from("profiles")
-    .select("first_name,last_name,username,avatar_path")
+    .select("username,avatar_path")
     .eq("id", user.id)
     .maybeSingle();
   if (error)
     throw new StudioError("Your profile could not be loaded. Try again.", 503);
   if (!profileComplete(profile))
     throw new StudioError(
-      "Finish your name and username in Profile first.",
+      "Choose a username in Profile first.",
       403,
     );
   const secret =

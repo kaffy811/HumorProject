@@ -178,3 +178,20 @@ assert.equal(store.getState().detailReturn.pages, 3);
 store.getState().consumeDetailReturn();
 assert.equal(store.getState().detailReturn, null);
 console.log("PASS detail return position survives route scroll reset");
+
+const savedNow=Date.now;
+try {
+ let clock=2_000_000_000_000;Date.now=()=>clock;
+ const u='three-layer-local',p=mockPost.mockList(u,'new',null,12).posts[0].id;
+ const root=mock.mockCommentAdd(u,p,'Level one',undefined,'depth-1').comment;
+ const child=mock.mockCommentAdd(u,p,'Level two',root.id,'depth-2').comment;
+ const leaf=mock.mockCommentAdd(u,p,'Level three',child.id,'depth-3').comment;
+ assert.deepEqual([root.depth,child.depth,leaf.depth],[1,2,3]);
+ clock+=11000;
+ assert.throws(()=>mock.mockCommentAdd(u,p,'Level four',leaf.id,'depth-4'),/three levels deep/);
+ mock.mockCommentAction(u,root.id,'delete');
+ assert.throws(()=>mock.mockCommentAdd(u,p,'Still level four',leaf.id,'depth-4b'),/three levels deep/);
+ const failures=load('lib/comments-server.ts',{'server-only':{},'./create-contracts':{},'./studio-server':{},'./comment-contracts':contract});
+ assert.equal(failures.commentFailure(Error(contract.COMMENT_DEPTH_ERROR)).status,400);
+} finally {Date.now=savedNow;}
+console.log('PASS mock and API errors enforce three comment levels, including replies whose ancestors were deleted');

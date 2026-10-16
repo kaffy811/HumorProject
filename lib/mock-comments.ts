@@ -3,6 +3,8 @@ import { randomUUID } from "node:crypto";
 import { mockGet, mockCommentCount } from "./mock-posts";
 import {
   orderComments,
+  COMMENT_DEPTH_ERROR,
+  MAX_COMMENT_DEPTH,
   type Comment,
   type CommentSort,
   type CommentPage,
@@ -158,6 +160,16 @@ export function mockCommentAdd(
       )
     : null;
   if (replyId && !target) throw new StudioError("Reply no longer available.");
+  let depth = 1;
+  let ancestor = target;
+  const seen = new Set<string>();
+  while (ancestor) {
+    if (seen.has(ancestor.id) || depth >= MAX_COMMENT_DEPTH)
+      throw new StudioError(COMMENT_DEPTH_ERROR);
+    seen.add(ancestor.id);
+    depth++;
+    ancestor = s.comments.find(c => c.id === ancestor!.replyTo?.id) || null;
+  }
   const c: Comment = {
     id: randomUUID(),
     postId,
@@ -166,6 +178,7 @@ export function mockCommentAdd(
     createdAt: new Date(now).toISOString(),
     haCount: 0,
     viewerHasHa: false,
+    depth,
     replyTo: target ? { id: target.id, authorName: target.author.name,authorId:target.author.id } : null,
   };
   s.comments.push(c);

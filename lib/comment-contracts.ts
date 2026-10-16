@@ -7,8 +7,11 @@ export interface Comment {
   createdAt: string;
   haCount: number;
   viewerHasHa: boolean;
+  depth?: number;
   replyTo: { id: string; authorName: string; authorId?: string | null } | null;
 }
+export const MAX_COMMENT_DEPTH = 3;
+export const COMMENT_DEPTH_ERROR = "Replies can only go three levels deep.";
 export type CommentSort = "top" | "new";
 export interface CommentPage {
   comments: Comment[];

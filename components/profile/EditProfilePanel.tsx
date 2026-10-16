@@ -53,8 +53,6 @@ export function EditProfilePanel({
         onBusyChange={setBusy}
         initial={{
           username: profile.username,
-          firstName: profile.firstName,
-          lastName: profile.lastName,
           avatarUrl: profile.avatarUrl,
           googlePhotoUrl: profile.googlePhotoUrl || null,
         }}

@@ -43,7 +43,7 @@ function Board() {
         <p>Evidence that someone laughed. Possibly on purpose.</p>
       </header>
       <LeaderboardControls board={board} window={period} />
-      <p className="rank-explanation">{board === "jokes" ? "RANKED BY HA" : "RANKED BY HA RECEIVED"} · {period === "week" ? "LAST 7 DAYS" : period === "month" ? "LAST 30 DAYS" : "ALL TIME"}</p>
+      <p className="rank-explanation">{board === "jokes" ? "RANKED BY LIKES" : "RANKED BY LIKES RECEIVED"} · {period === "week" ? "LAST 7 DAYS" : period === "month" ? "LAST 30 DAYS" : "ALL TIME"}</p>
       <div className="leaderboard-progress" role="status" aria-live="polite">
         {data && isValidating ? "Recounting the laughs…" : ""}
       </div>

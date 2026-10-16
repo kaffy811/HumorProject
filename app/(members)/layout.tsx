@@ -13,7 +13,7 @@ export default async function SiteLayout({
   if (user) {
     const { data: profile, error } = await db
       .from("profiles")
-      .select("first_name,last_name,username,avatar_path,updated_at")
+      .select("username,avatar_path,updated_at")
       .eq("id", user.id)
       .maybeSingle();
     if (error) throw new Error("Your profile could not be loaded. Try again.");

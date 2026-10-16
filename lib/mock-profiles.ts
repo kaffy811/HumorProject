@@ -26,8 +26,6 @@ export function mockProfile(owner: string, id: string): MemberProfile | null {
   return {
     ...(author || { id, name: "@you", username: "you", avatarUrl: null }),
     username: author?.username || (id === owner ? "you" : "member"),
-    firstName: "Local",
-    lastName: "Member",
     joinedAt: "2026-10-01T12:00:00Z",
     onboardedAt: new Date().toISOString(),
     ...override,
@@ -40,7 +38,7 @@ export function mockProfile(owner: string, id: string): MemberProfile | null {
 }
 export function mockSaveProfile(
   owner: string,
-  fields: { username: string; first_name: string; last_name: string },
+  fields: { username: string },
   upload?: string,
   action?: string,
 ) {
@@ -51,8 +49,6 @@ export function mockSaveProfile(
     ...value,
     name: `@${fields.username}`,
     username: fields.username,
-    firstName: fields.first_name,
-    lastName: fields.last_name,
     ...(action === "remove" ? { avatarUrl: null } : {}),
     ...(upload
       ? { avatarUrl: `/api/profile/avatar/preview?id=${upload}` }

@@ -2,9 +2,12 @@ import "server-only";
 import { validUuid } from "./create-contracts";
 import { StudioError, studioFailure } from "./studio-server";
 import type { PostsContext } from "./posts-server";
+import { COMMENT_DEPTH_ERROR } from "./comment-contracts";
 export function commentFailure(e: unknown) {
   const message =
     typeof e === "object" && e && "message" in e ? String(e.message) : "";
+  if (message.includes(COMMENT_DEPTH_ERROR))
+    return Response.json({ error: COMMENT_DEPTH_ERROR }, { status: 400 });
   if (message.includes("rate limit"))
     return Response.json(
       { error: "Three thoughts in ten seconds. Give the fourth a moment." },

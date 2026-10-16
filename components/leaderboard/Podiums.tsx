@@ -54,7 +54,7 @@ export function PeoplePodium({ people }: { people: RankedPerson[] }) {
             </h2>
           </Link>
           <p className="person-ha">
-            {person.haReceived} <span>Ha</span>
+            {person.haReceived} <span>Likes</span>
           </p>
           <p className="comic-label">from {person.postCount} {person.postCount===1?"post":"posts"}</p>
           <Link className="person-best" href={`/post/${person.bestPost.id}`}>
