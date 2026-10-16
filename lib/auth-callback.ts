@@ -13,14 +13,18 @@ export async function finishAuth(
   const target = safeReturnPath(request.cookies.get(RETURN_COOKIE)?.value);
   const response = NextResponse.redirect(new URL("/feed", request.url));
   response.headers.set("Cache-Control", "private, no-store");
+  response.headers.set("Referrer-Policy", "no-referrer");
+  let stage = "configure";
+  let exchangeStatus = "not-attempted";
   const fail = (reason: "session" | "profile" | "unavailable") => {
+    // Enumerated stages only: never include codes, cookies, JWTs or identity data.
+    console.warn("Sign-in could not finish", { stage, reason, exchangeStatus });
     response.headers.set(
       "Location",
       new URL(`/auth/error?reason=${reason}`, request.url).toString(),
     );
     return response;
   };
-  let stage = "configure";
   try {
     const { url, key } = config();
     const db = createServerClient(url, key, {
@@ -43,8 +47,11 @@ export async function finishAuth(
       // Never trust the exchange alone: verify the resulting session below.
       try {
         const flowId = incoming.searchParams.get("sb_flow_id");
-        await db.auth.exchangeCodeForSession(code, flowId ? { flowId } : undefined);
+        const { error } = await db.auth.exchangeCodeForSession(code, flowId ? { flowId } : undefined);
+        exchangeStatus = !error ? "exchanged" : error.code === "pkce_code_verifier_not_found"
+          ? "missing-verifier" : "exchange-rejected";
       } catch {
+        exchangeStatus = "exchange-unavailable";
         // A prior successful exchange may already have established cookies.
       }
     }
@@ -54,6 +61,7 @@ export async function finishAuth(
       error: userError,
     } = await db.auth.getUser();
     if (userError || !user) return fail("session");
+    stage = "verify-google";
     const { data: verified, error: claimsError } = await db.auth.getClaims();
     if (claimsError || !isGoogleSession(user, verified?.claims))
       return fail("session");

@@ -1,0 +1,9 @@
+# Keep OAuth and PKCE cookies on the same production host
+
+Google sign-in from the immutable production deployment URL returned to Supabase's configured Site URL (`humor-project-humor-project8.vercel.app`) instead of the initiating host. A host-only verifier cookie created on a deployment URL cannot be read on that other host. An established session on the destination can hide the failed exchange; the earlier successful existing-account check did not cover a clean session across aliases.
+
+All sign-in controls now navigate to `/auth/start`. In production, that route first redirects to the configured production auth origin, before creating any verifier or return cookie. The server then starts Google OAuth, sends the SDK's PKCE cookie on the redirect response, and requests the exact `/auth/callback` URL on that same host. The existing proxy also handles a provider fallback to Site URL's root. Validated internal post destinations survive this hop; external/auth/API return paths are rejected. Other aliases including `humor-project-lac.vercel.app` remain accessible; sign-in completes on the single production auth host. Local development and preview environments retain their own origin.
+
+No token/cookie sharing between Vercel domains, no weakening of Google session checks, and no database/provider configuration changes. Failed callbacks now log only enumerated verification stages and exchange outcomes, without user identities, auth codes, cookies or tokens.
+
+Validation: lint, full regression suite and production build passed. Regression checks cover alias/deployment redirects before cookie creation, exact callback URL, safe post destinations, and actual installed `@supabase/ssr` PKCE cookie generation with its SHA-256 challenge. Existing Feed/Profile routing and denied-session tests remain in place. Production Chrome sign-in is checked separately after deployment.

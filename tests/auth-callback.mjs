@@ -143,35 +143,69 @@ assert.equal(location(await harness({ claims: { sub: "wrong-user" } }).proxy(req
 assert.equal((await harness({ user: null }).proxy(request("/auth/error"))).headers.get("location"), null);
 console.log("PASS OAuth codes landing on / or /login reach the callback; verified sessions → Feed/Profile, missing/reused codes recover, invalid identities stay blocked, profile retry, safe post return and cookies survive redirects/refresh batches");
 
-const originalFetch = globalThis.fetch;
-const originalLocation = globalThis.location;
-const calls = [];
+const startClient = load("lib/start-google-sign-in.ts", { "./auth-return": returns }).googleSignInUrl;
+assert.equal(await startClient(), "/auth/start?next=%2Ffeed");
+assert.equal(await startClient("/post/123#comments"), "/auth/start?next=%2Fpost%2F123%23comments");
+await assert.rejects(() => startClient("//evil.example"));
+const previousEnv = process.env.VERCEL_ENV;
 try {
-  globalThis.location = { origin: "https://humor.invalid" };
-  globalThis.fetch = async (url, init) => {
-    calls.push({ url, init });
-    return { ok: true };
-  };
-  const start = load("lib/start-google-sign-in.ts", {
+  process.env.VERCEL_ENV = "production";
+  let oauthCalls = 0;
+  const options = [];
+  const startDeps = {
+    "next/server": next,
     "./auth-return": returns,
-    "@/lib/supabase/client": { createClient: () => ({ auth: { signInWithOAuth: async args => {
-      calls.push(args);
-      return { data: { url: "https://accounts.google.com/local-fixture" }, error: null };
-    } } }) },
-  }).googleSignInUrl;
-  assert.equal(await start(), "https://accounts.google.com/local-fixture");
-  assert.deepEqual(JSON.parse(calls[0].init.body), { target: "/feed" });
-  assert.equal(calls[1].provider, "google");
-  assert.equal(calls[1].options.redirectTo, "https://humor.invalid/auth/callback");
-  assert.equal(calls[1].options.skipBrowserRedirect, true);
-  const count = calls.length;
-  await assert.rejects(() => start("//evil.example"));
-  assert.equal(calls.length, count);
-  globalThis.fetch = async () => ({ ok: false });
-  await assert.rejects(() => start(), /prepare sign-in/);
+    "@/lib/supabase/config": { config: () => ({ url: "https://fixture.supabase.co", key: "fixture-anon-key" }) },
+    "@supabase/ssr": { createServerClient: (_url, _key, settings) => ({ auth: {
+      async signInWithOAuth(args) {
+        oauthCalls++;
+        options.push(args);
+        settings.cookies.setAll([{ name: "fixture-code-verifier", value: "fixture", options: { path: "/", sameSite: "lax" } }]);
+        return { data: { url: "https://fixture.supabase.co/auth/v1/authorize" }, error: null };
+      },
+    } }) },
+  };
+  const startModule = load("lib/start-google-auth.ts", startDeps);
+  const canonical = startModule.PRODUCTION_AUTH_ORIGIN;
+  for (const host of ["https://humor-project-lac.vercel.app", "https://humor-project-fresh-deployment-humor-project8.vercel.app"]) {
+    const response = await startModule.startGoogleAuth(new next.NextRequest(host + "/auth/start?next=%2Fpost%2F123%23comments"));
+    assert.equal(response.headers.get("location"), canonical + "/auth/start?next=%2Fpost%2F123%23comments");
+    assert.equal(response.cookies.getAll().length, 0, "No PKCE or return cookie may be created on a different host");
+  }
+  assert.equal(oauthCalls, 0);
+  const response = await startModule.startGoogleAuth(new next.NextRequest(canonical + "/auth/start?next=%2Fpost%2F123%23comments"));
+  assert.equal(oauthCalls, 1);
+  assert.equal(response.cookies.get("humor_return_to")?.value, "/post/123#comments");
+  assert.equal(response.cookies.get("fixture-code-verifier")?.sameSite, "lax");
+  assert.equal(response.headers.get("location"), "https://fixture.supabase.co/auth/v1/authorize");
+  assert.equal(options[0].options.redirectTo, canonical + "/auth/callback");
+  assert.equal(options[0].provider, "google");
+  assert.equal(options[0].options.skipBrowserRedirect, true);
+  const invalid = await startModule.startGoogleAuth(new next.NextRequest(canonical + "/auth/start?next=https://evil.example"));
+  assert.equal(invalid.cookies.get("humor_return_to")?.value, "/feed");
+
+  // Exercise actual @supabase/ssr PKCE cookie storage, not a hand-written stub.
+  const sdkStart = load("lib/start-google-auth.ts", {
+    ...startDeps, "@supabase/ssr": require("@supabase/ssr"),
+  }).startGoogleAuth;
+  const fresh = await sdkStart(new next.NextRequest(canonical + "/auth/start"));
+  const authorize = new URL(fresh.headers.get("location"));
+  assert.equal(authorize.searchParams.get("redirect_to"), canonical + "/auth/callback");
+  assert.equal(authorize.searchParams.get("code_challenge_method"), "s256");
+  const verifierCookie = fresh.cookies.getAll().find(c => c.name.endsWith("-code-verifier"));
+  assert.ok(verifierCookie?.value, "First-time sessions receive an actual PKCE cookie on the redirect response");
+  assert.equal(verifierCookie.sameSite, "lax");
+  assert.equal(verifierCookie.path, "/");
+  assert.equal(verifierCookie.domain, undefined);
+  const { createHash } = require("node:crypto");
+  const stored = JSON.parse(Buffer.from(verifierCookie.value.slice("base64-".length), "base64url").toString());
+  const verifier = stored.split("/")[0];
+  assert.equal(createHash("sha256").update(verifier).digest("base64url"), authorize.searchParams.get("code_challenge"));
+  process.env.VERCEL_ENV = "development";
+  const local = await sdkStart(new next.NextRequest("http://localhost:3014/auth/start?next=%2Fpost%2F123"));
+  assert.equal(new URL(local.headers.get("location")).searchParams.get("redirect_to"), "http://localhost:3014/auth/callback");
 } finally {
-  globalThis.fetch = originalFetch;
-  if (originalLocation === undefined) delete globalThis.location;
-  else globalThis.location = originalLocation;
+  if (previousEnv === undefined) delete process.env.VERCEL_ENV;
+  else process.env.VERCEL_ENV = previousEnv;
 }
-console.log("PASS landing resets abandoned return state before Google OAuth, exact callback URI and preparation failure stops sign-in");
+console.log("PASS all production aliases enter one OAuth origin before cookie creation; exact callback, real SSR PKCE cookie/challenge, safe post return and local development origin");
