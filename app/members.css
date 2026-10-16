@@ -1947,3 +1947,20 @@
 .comment-like .heart-glyph > img { width:22px;height:22px; }
 .leaderboard-rows .leaderboard-row { padding-left:16px; }
 @media(prefers-reduced-motion:reduce){.image-preview > img{transition:none;}}
+
+/* A reply identifies its actual parent, including when every author is the same. */
+.comment-level { color:var(--color-ink);opacity:.65;font-size:9px;letter-spacing:.5px;white-space:nowrap; }
+.comment-parent-context { display:flex;flex-direction:column;gap:3px;min-width:0;margin:10px 0 8px;padding:7px 10px;border-left:2px solid var(--color-tomato);background:rgba(32,32,30,.035);text-decoration:none;color:var(--color-ink); }
+.comment-parent-context > span:first-child { color:var(--color-tomato);font-size:11px;font-weight:700;overflow-wrap:anywhere; }
+.comment-parent-context q,.composer-reply-excerpt { display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;line-height:1.5;color:var(--color-ink); }
+.comment-parent-context:hover { background:rgba(32,32,30,.07); }
+.comment-parent-missing { font-size:12px;opacity:.65; }
+.comment-list > .comment-thread + .comment-thread { margin-top:20px; }
+.comment-replies { margin-left:22px;padding-left:18px;border-left:2px solid rgba(32,32,30,.22); }
+.comment-replies .comment-replies { margin-left:18px;padding-left:16px; }
+.comment-replies > .comment-thread + .comment-thread { margin-top:16px;border-top:1px dashed rgba(32,32,30,.3); }
+.comment-replies > .comment-thread + .comment-thread > .comment-item { padding-top:20px; }
+.comment-item:target { background:#f5df88;outline:1px dashed var(--color-ink);outline-offset:-1px;scroll-margin-top:24px; }
+.comment-replying > div { flex:1;min-width:0; }
+.composer-reply-excerpt { max-width:100%;font-weight:400; }
+@media(max-width:639px){.comment-replies{margin-left:12px;padding-left:12px;}.comment-replies .comment-replies{margin-left:10px;padding-left:10px;}.comment-level{font-size:8px;}.comment-replies > .comment-thread + .comment-thread{margin-top:12px;}}

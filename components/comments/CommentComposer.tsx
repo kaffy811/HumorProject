@@ -69,7 +69,7 @@ export function CommentComposer({
     <div className="comment-composer">
       {reply && (
         <div className="comment-replying">
-          Replying to {reply.author.name}
+          <div><span>Replying to {reply.author.name}</span><q className="composer-reply-excerpt">{reply.body}</q></div>
           <button aria-label="Cancel reply" onClick={onCancel}>
             ×
           </button>

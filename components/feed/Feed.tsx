@@ -17,7 +17,7 @@ function Content() {
   const q = useSearchParams(),
     router = useRouter(),
     viewer = useFeedViewer(),
-    sort = q.get("sort") === "new" ? "new" : "hot",
+    sort = q.get("sort") === "hot" ? "hot" : "new",
     page = /^[1-9]\d*$/.test(q.get("page") || "")
       ? Math.min(100000, Number(q.get("page")))
       : 1,

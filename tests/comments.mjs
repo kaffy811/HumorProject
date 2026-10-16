@@ -49,6 +49,17 @@ assert.deepEqual(ancestors.map(c=>c.id),["child","parent"]);
 assert.deepEqual(ancestorRequests,["child","parent"]);
 assert.deepEqual(await commentAncestors([child],"thread-post",async()=>({...parent,postId:"another-post"})),[]);
 assert.deepEqual(await commentAncestors([{...child,replyTo:{id:"parent",authorName:"deleted"}}],"thread-post",async()=>assert.fail("Deleted parents must not be fetched")),[]);
+// Four comments do not imply four levels: the last answers the root again.
+const sibling = threadComment("fourth","parent",0,5);
+for(const sort of ["top","new"]) {
+ const grouped=commentThreads([grandchild,sibling,child,parent],sort,new Set([sibling.id]));
+ assert.equal(grouped.length,1);
+ assert.deepEqual(grouped[0].replies.map(t=>t.comment.id),["child","fourth"]);
+ assert.equal(grouped[0].replies[0].replies[0].comment.id,"grandchild");
+ assert.equal(grouped[0].replies[1].parent.id,"parent");
+ assert.equal(grouped[0].replies[1].parent.body,"parent");
+ assert.equal(grouped[0].replies[0].replies[0].parent.id,"child");
+}
 console.log("PASS replies stay under their parent in Top/New, highlighted replies promote conversations, missing ancestors load once, deleted/cyclic/cross-post replies remain safe");
 assert.equal(contract.validateComment(" \n "), false);
 assert.equal(contract.validateComment("🙂".repeat(280)), true);

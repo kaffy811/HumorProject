@@ -53,9 +53,9 @@ export function CommentsPanel({
   }, [target.data, conversations.parentsLoading, input]);
   function renderThread(thread: CommentThread, level = 1): React.ReactNode {
     const c = thread.comment;
-    return <li key={c.id} className="comment-thread">
+    return <li key={c.id} className="comment-thread" data-thread-level={Math.min(level, 3)}>
       <CommentItem
-        comment={c} viewerId={viewerId} op={post.author.id}
+        comment={{ ...c, depth: c.depth || level }} parent={thread.parent} viewerId={viewerId} op={post.author.id}
         highlighted={comments.highlighted.has(c.id) || c.id === target.data?.id}
         onReply={() => {
           if (Math.max(c.depth || level, level) >= MAX_COMMENT_DEPTH) {

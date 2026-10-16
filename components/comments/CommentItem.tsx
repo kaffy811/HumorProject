@@ -11,6 +11,7 @@ import { usePostFeedback } from "@/components/feed/FeedCacheProvider";
 import { HeartGlyph } from "@/components/posts/HeartGlyph";
 export function CommentItem({
   comment,
+  parent,
   viewerId,
   op,
   highlighted,
@@ -19,6 +20,7 @@ export function CommentItem({
   onPatch,
 }: {
   comment: Comment;
+  parent?: Comment | null;
   viewerId: string;
   op: string;
   highlighted: boolean;
@@ -27,6 +29,8 @@ export function CommentItem({
   onPatch: (change: Partial<Comment>) => Promise<void>;
 }) {
   const author = usePublicAuthor(comment.author);
+  const parentBody = parent?.id === comment.replyTo?.id && parent?.postId === comment.postId
+    ? parent.body : null;
   const replyAuthor = usePublicAuthor({
     id: comment.replyTo?.authorId || "",
     name: comment.replyTo?.authorName || "",
@@ -105,6 +109,7 @@ export function CommentItem({
     <article
       id={`comment-${comment.id}`}
       data-comment-depth={comment.depth}
+      tabIndex={-1}
       className={`comment-item ${highlighted ? "is-highlighted" : ""}`}
       aria-busy={pending}
     >
@@ -131,14 +136,21 @@ export function CommentItem({
           <time dateTime={comment.createdAt}>
             {relativeTime(comment.createdAt)}
           </time>
+          {comment.replyTo && <span className="comment-level comic-label">Level {comment.depth || 2}</span>}
           {pending && <span>Sending…</span>}
         </div>
-        <p className="comment-body">
-          {comment.replyTo && (
-            <span className="comment-mention">{replyAuthor.name.startsWith("@")?replyAuthor.name:`@${replyAuthor.name}`} </span>
-          )}
-          {comment.body}
-        </p>
+        {comment.replyTo && (parentBody ? (
+          <a className="comment-parent-context" href={`#comment-${comment.replyTo.id}`}>
+            <span>Reply to {replyAuthor.name.startsWith("@") ? replyAuthor.name : `@${replyAuthor.name}`}</span>
+            <q>{parentBody}</q>
+          </a>
+        ) : (
+          <div className="comment-parent-context is-unavailable">
+            <span>Reply to {replyAuthor.name.startsWith("@") ? replyAuthor.name : `@${replyAuthor.name}`}</span>
+            <span className="comment-parent-missing">Original comment unavailable.</span>
+          </div>
+        ))}
+        <p className="comment-body">{comment.body}</p>
         <div className="comment-actions">
           <motion.button
             animate={controls}

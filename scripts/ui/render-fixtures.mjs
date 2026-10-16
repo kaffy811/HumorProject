@@ -55,6 +55,10 @@ const fixtureComments = [
   {id:"fixture-parent",postId:posts[0].id,body:"Absolutely. This is my entire contribution to the group project.",author:posts[1].author,createdAt:"2026-10-15T12:00:00Z",haCount:1,viewerHasHa:false,replyTo:null},
   {id:"fixture-reply",postId:posts[0].id,body:"Finally. A peer review I can afford.",author:posts[0].author,createdAt:"2026-10-15T12:05:00Z",haCount:20,viewerHasHa:false,replyTo:{id:"fixture-parent",authorName:posts[1].author.name,authorId:posts[1].author.id}},
 ];
+fixtureComments.push(
+ {id:"fixture-third",postId:posts[0].id,body:"Absolutely. A reply to the second comment.",author:posts[0].author,createdAt:"2026-10-15T12:06:00Z",haCount:0,viewerHasHa:false,depth:3,replyTo:{id:"fixture-reply",authorName:posts[0].author.name,authorId:posts[0].author.id}},
+ {id:"fixture-fourth",postId:posts[0].id,body:"A fourth comment, replying to the first one again.",author:posts[0].author,createdAt:"2026-10-15T12:07:00Z",haCount:0,viewerHasHa:false,depth:2,replyTo:{id:"fixture-parent",authorName:posts[1].author.name,authorId:posts[1].author.id}},
+);
 posts[0].commentCount = fixtureComments.length;
 const page = {
   posts,

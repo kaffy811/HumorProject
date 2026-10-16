@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   try {
     const ctx = await postsContext(),
       q = new URL(request.url).searchParams,
-      sort = q.get("sort") || "hot",
+      sort = q.get("sort") || "new",
       limit = Number(q.get("limit") || 9);
     if (
       !["hot", "new", "mine", "saved"].includes(sort) ||

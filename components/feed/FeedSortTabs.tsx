@@ -7,7 +7,7 @@ export function FeedSortTabs({ sort }: { sort: PostSort }) {
     { feed } = useStores();
   return (
     <div className="feed-sort" aria-label="Sort posts">
-      {(["hot", "new"] as const).map((value) => (
+      {(["new", "hot"] as const).map((value) => (
         <button
           key={value}
           className={`style-option ${sort === value ? "is-selected" : ""}`}

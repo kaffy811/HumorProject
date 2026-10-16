@@ -1,6 +1,7 @@
 import { orderComments, type Comment, type CommentSort } from "./comment-contracts";
 export interface CommentThread {
   comment: Comment;
+  parent: Comment | null;
   replies: CommentThread[];
 }
 // Sort conversations, not individual replies. A fresh reply can move its
@@ -8,7 +9,7 @@ export interface CommentThread {
 export function commentThreads(rows: Comment[], sort: CommentSort, highlighted: Set<string>) {
   const nodes = new Map<string, CommentThread>();
   for (const comment of rows)
-    nodes.set(comment.id, { comment, replies: [] });
+    nodes.set(comment.id, { comment, parent: null, replies: [] });
   const roots: CommentThread[] = [];
   for (const node of nodes.values()) {
     const parent = node.comment.replyTo && nodes.get(node.comment.replyTo.id);
@@ -23,9 +24,10 @@ export function commentThreads(rows: Comment[], sort: CommentSort, highlighted: 
       seen.add(ancestor.comment.id);
       ancestor = nodes.get(ancestor.comment.replyTo?.id || "");
     }
-    if (parent && parent.comment.postId === node.comment.postId && !cyclic)
+    if (parent && parent.comment.postId === node.comment.postId && !cyclic) {
+      node.parent = parent.comment;
       parent.replies.push(node);
-    else
+    } else
       roots.push(node);
   }
   const promoted = new Set<string>();
