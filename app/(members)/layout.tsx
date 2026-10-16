@@ -1,6 +1,7 @@
 import { memberAuth } from "@/lib/member-auth";
 import { AppShell } from "@/components/shell/AppShell";
 import { MOODS } from "@/stores/mascot-store";
+import { mascotImage } from "@/lib/mascot-assets";
 export const dynamic = "force-dynamic";
 export default async function SiteLayout({
   children,
@@ -31,7 +32,9 @@ export default async function SiteLayout({
           key={mood}
           rel="preload"
           as="image"
-          href={`/baby/bust/${mood}.png`}
+          href={mascotImage(mood)}
+          type="image/webp"
+          fetchPriority={mood === "smirk" ? "high" : "low"}
         />
       ))}
       <AppShell author={author} viewerId={user?.id || "guest"}>

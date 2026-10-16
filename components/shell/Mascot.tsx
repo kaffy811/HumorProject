@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { MOODS } from "@/stores/mascot-store";
+import { MASCOT_IMAGE_SIZE, mascotImage } from "@/lib/mascot-assets";
 import { useMascot, useStores } from "@/stores/StoreProvider";
 export function Mascot() {
   const mood = useMascot((s) => s.mood),
@@ -11,21 +11,9 @@ export function Mascot() {
   const [scrolled, setScrolled] = useState(false);
   const [visible, setVisible] = useState(mood);
   useEffect(() => {
-    const images = MOODS.map((name) => {
-      const img = new Image();
-      img.src = `/baby/bust/${name}.png`;
-      return img;
-    });
-    return () => {
-      images.forEach((img) => {
-        img.onload = null;
-      });
-    };
-  }, []);
-  useEffect(() => {
     let active = true;
     const img = new Image();
-    img.src = `/baby/bust/${mood}.png`;
+    img.src = mascotImage(mood);
     img
       .decode()
       .then(() => {
@@ -67,11 +55,11 @@ export function Mascot() {
     >
       <motion.img
         key={visible}
-        src={`/baby/bust/${visible}.png`}
+        src={mascotImage(visible)}
         alt=""
         aria-hidden="true"
-        width={160}
-        height={160}
+        width={MASCOT_IMAGE_SIZE}
+        height={MASCOT_IMAGE_SIZE}
         initial={reduced ? false : { scaleY: 0.94 }}
         animate={{ scaleY: 1 }}
         transition={{ type: "spring", stiffness: 330, damping: 15 }}

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { REPORT_REASONS, type Post } from "@/lib/post-contracts";
 import { deletePost, reportPost } from "@/lib/posts";
 import { PostDialog } from "./PostDialog";
+import { usePostFeedback } from "@/components/feed/FeedCacheProvider";
 export function PostMenu({
   post,
   own,
@@ -13,11 +14,11 @@ export function PostMenu({
   onDelete: () => Promise<void>;
 }) {
   const ref = useRef<HTMLDetailsElement>(null);
+  const { notify } = usePostFeedback();
   const [dialog, setDialog] = useState<"delete" | "report" | null>(null),
     [reason, setReason] = useState<string>(REPORT_REASONS[0]),
     [busy, setBusy] = useState(false),
-    [error, setError] = useState(""),
-    [message, setMessage] = useState("");
+    [error, setError] = useState("");
   useEffect(() => {
     const close = (e: PointerEvent) => {
       if (!ref.current?.contains(e.target as Node) && ref.current)
@@ -44,7 +45,7 @@ export function PostMenu({
         await onDelete();
       } else {
         await reportPost(post.id, reason);
-        setMessage("Report sent. The baby has been informed.");
+        notify("Report sent. The baby has been informed.");
       }
       setDialog(null);
     } catch (e) {
@@ -72,11 +73,6 @@ export function PostMenu({
           </button>
         </div>
       </details>
-      {message && (
-        <span className="sr-only" role="status">
-          {message}
-        </span>
-      )}
       {dialog && (
         <PostDialog
           title={dialog === "delete" ? "Delete this post?" : "Report this post"}
