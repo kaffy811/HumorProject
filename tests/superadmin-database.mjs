@@ -17,6 +17,7 @@ try {
   create policy "Read own profile" on public.profiles for select to authenticated using(id=(select auth.uid()));
   create policy "Update own profile" on public.profiles for update to authenticated using(id=(select auth.uid())) with check(id=(select auth.uid()));`);
  await db.exec(await readFile('supabase/migrations/202610200001_superadmin.sql','utf8'));
+ await db.exec(await readFile('supabase/migrations/202610210001_superadmin_requests.sql','utf8'));
  const member=randomUUID();
  await db.query('insert into auth.users(id)values($1)',[member]);
  await db.query('insert into public.profiles(id)values($1)',[member]);
@@ -36,5 +37,23 @@ try {
  await db.query('update public.profiles set is_superadmin=true where id=$1',[member]);
  await db.exec('reset role');
  assert.equal((await db.query('select is_superadmin from public.profiles where id=$1',[member])).rows[0].is_superadmin,true);
- console.log('PASS superadmin flag defaults false, members cannot grant it (column grant + trigger), service role and owners can.');
+ // Request → approval flow.
+ const applicant=randomUUID(),outsider=randomUUID();
+ for(const id of [applicant,outsider]){await db.query('insert into auth.users(id)values($1)',[id]);await db.query('insert into public.profiles(id)values($1)',[id]);}
+ const req=(await db.query("insert into public.humor_admin_requests(user_id,message)values($1,'please')returning id",[applicant])).rows[0].id;
+ await assert.rejects(()=>db.query('insert into public.humor_admin_requests(user_id)values($1)',[applicant]),/duplicate key/);
+ await assert.rejects(()=>db.query('select public.humor_decide_admin_request($1,$2,true)',[req,outsider]),/Only superadmins/);
+ await db.exec('set role authenticated');
+ await assert.rejects(()=>db.query('select * from public.humor_admin_requests'),/permission denied/);
+ await assert.rejects(()=>db.query('select public.humor_decide_admin_request($1,$2,true)',[req,member]),/permission denied/);
+ await db.exec('reset role');
+ const decided=(await db.query('select public.humor_decide_admin_request($1,$2,true)r',[req,member])).rows[0].r;
+ assert.equal(decided.status,'approved');
+ assert.equal((await db.query('select is_superadmin from public.profiles where id=$1',[applicant])).rows[0].is_superadmin,true);
+ await assert.rejects(()=>db.query('select public.humor_decide_admin_request($1,$2,false)',[req,member]),/already decided/);
+ const second=(await db.query('insert into public.humor_admin_requests(user_id)values($1)returning id',[outsider])).rows[0].id;
+ assert.equal((await db.query('select public.humor_decide_admin_request($1,$2,false)r',[second,member])).rows[0].r.status,'rejected');
+ assert.equal((await db.query('select is_superadmin from public.profiles where id=$1',[outsider])).rows[0].is_superadmin,false);
+ await db.query('insert into public.humor_admin_requests(user_id)values($1)',[outsider]);
+ console.log('PASS superadmin flag defaults false, members cannot grant it (column grant + trigger), service role and owners can; one pending request per member, only superadmins decide, decisions are final and atomic.');
 } finally { await db.close(); }
