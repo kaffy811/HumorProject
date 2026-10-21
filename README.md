@@ -13,6 +13,10 @@ Repository: kaffy811/HumorProject. Database: wqkpatxsbxwjsupojjcq. Vercel: humor
 
 Checks: `npm test`, `npm run lint`, `npm run build`. Start a production server with `npm run start -- --hostname 127.0.0.1 --port 3006`, then run `node tests/public-http.mjs`. SQL rollback tests live in tests/rls.sql, tests/profiles-generations-rls.sql and tests/google-onboarding-rls.sql.
 
+## Admin console
+
+A separate superadmin app lives in [`admin/`](admin/README.md) and deploys as its own Vercel project (Root Directory `admin`) against the same database. Access requires Google sign-in and `profiles.is_superadmin = true` (migration `202610200001_superadmin.sql`).
+
 ## Features
 
 - Google-only sign-in from an interactive Little Mao comic landing page. Exact app callback: /auth/callback. Old email/password sessions are rejected.

@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     // Local screenshots, QA bundles and private acceptance exports.
     "deliverables/**",
     "next-env.d.ts",
+    // Separate admin app with its own lint config.
+    "admin/**",
   ]),
 ]);
 
