@@ -85,5 +85,16 @@ try {
  await db.exec('set role authenticated');
  await assert.rejects(()=>db.query('select * from public.humor_activity_log'),/permission denied/);
  await db.exec('reset role');
+ await db.exec(await readFile('supabase/migrations/202610230001_admin_roles.sql','utf8'));
+ await db.exec('truncate public.humor_activity_log');
+ const r2=(await db.query('insert into public.humor_admin_requests(user_id)values($1)returning id',[member])).rows[0].id;
+ await db.query("select set_config('request.headers',$1,false)",[JSON.stringify({'x-humor-admin':admin})]);
+ await db.query('select public.humor_decide_admin_request($1,$2,true)',[r2,admin]);
+ await db.query('select public.humor_revoke_admin($1,$2)',[member,admin]);
+ await db.query("select set_config('request.headers','',false)");
+ const roles=await actions();
+ assert.deepEqual(roles.map(r=>r.action),['request_superadmin','approve_request','grant_admin','revoke_admin']);
+ assert.ok(roles.slice(1).every(r=>r.actor_id===admin&&r.via==='admin'),'credited to the superadmin');
+ assert.equal(roles.at(-1).detail.ownerId,member);
  console.log('PASS activity log: backfill, sign-in/out, profile, upload, AI, publish/edit/delete, Ha/unHa, comments, hearts, saves, reports, admin attribution, superadmin flow; deletion cleanup not logged; private to the server.');
 } finally { await db.close(); }

@@ -55,5 +55,26 @@ try {
  assert.equal((await db.query('select public.humor_decide_admin_request($1,$2,false)r',[second,member])).rows[0].r.status,'rejected');
  assert.equal((await db.query('select is_superadmin from public.profiles where id=$1',[outsider])).rows[0].is_superadmin,false);
  await db.query('insert into public.humor_admin_requests(user_id)values($1)',[outsider]);
- console.log('PASS superadmin flag defaults false, members cannot grant it (column grant + trigger), service role and owners can; one pending request per member, only superadmins decide, decisions are final and atomic.');
+ // Roles: approved requesters become admins; superadmins approve and remove admins.
+ await db.exec(await readFile('supabase/migrations/202610230001_admin_roles.sql','utf8'));
+ const role=async(id)=>(await db.query('select is_superadmin s,is_admin a from public.profiles where id=$1',[id])).rows[0];
+ assert.deepEqual(await role(applicant),{s:false,a:true},'approved requester converted to admin');
+ assert.deepEqual(await role(member),{s:true,a:false},'the approver stays superadmin');
+ const third=randomUUID();
+ await db.query('insert into auth.users(id)values($1)',[third]);await db.query('insert into public.profiles(id)values($1)',[third]);
+ const r3=(await db.query('insert into public.humor_admin_requests(user_id)values($1)returning id',[third])).rows[0].id;
+ await assert.rejects(()=>db.query('select public.humor_decide_admin_request($1,$2,true)',[r3,applicant]),/Only superadmins/,'admins cannot approve');
+ await db.query('select public.humor_decide_admin_request($1,$2,true)',[r3,member]);
+ assert.deepEqual(await role(third),{s:false,a:true},'approval grants admin, not superadmin');
+ await assert.rejects(()=>db.query('select public.humor_revoke_admin($1,$2)',[third,applicant]),/Only superadmins/,'admins cannot remove admins');
+ await assert.rejects(()=>db.query('select public.humor_revoke_admin($1,$2)',[member,member]),/database owner/,'superadmins cannot be removed from the console');
+ await db.query('insert into public.humor_admin_requests(user_id)values($1)',[third]);
+ await db.query('select public.humor_revoke_admin($1,$2)',[third,member]);
+ assert.deepEqual(await role(third),{s:false,a:false},'removed admin loses access');
+ assert.equal((await db.query("select count(*)::int n from public.humor_admin_requests where user_id=$1 and status='pending'",[third])).rows[0].n,0,'their pending request is closed');
+ await assert.rejects(()=>db.query('select public.humor_revoke_admin($1,$2)',[third,member]),/not an admin/);
+ await asMember();
+ await assert.rejects(()=>db.query('update public.profiles set is_admin=true where id=$1',[member]),/permission denied|superadmin or database owner/);
+ await db.exec('reset role');
+ console.log('PASS superadmin flag defaults false, members cannot grant it (column grant + trigger), service role and owners can; one pending request per member, only superadmins decide, decisions are final and atomic; approvals grant admin, only superadmins approve or remove admins, superadmins cannot be removed.');
 } finally { await db.close(); }
