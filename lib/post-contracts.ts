@@ -11,6 +11,7 @@ export interface Post {
   haCount: number;
   commentCount: number;
   viewerHasHa: boolean;
+  viewerHasDisliked: boolean;
   viewerHasSaved: boolean;
   firstPostPending?: boolean;
 }

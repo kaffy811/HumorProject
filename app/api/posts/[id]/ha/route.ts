@@ -1,7 +1,8 @@
+import { featureFailure } from "@/lib/member-feature-server";
 import { postsContext, activePost } from "@/lib/posts-server";
 import { sameOrigin } from "@/lib/humor-validation";
 import { validUuid } from "@/lib/create-contracts";
-import { readJson, studioFailure, StudioError } from "@/lib/studio-server";
+import { readJson, StudioError } from "@/lib/studio-server";
 import { mockAction } from "@/lib/mock-posts";
 export async function POST(
   request: Request,
@@ -25,6 +26,6 @@ export async function POST(
     if (error) throw error;
     return Response.json(data);
   } catch (e) {
-    return studioFailure(e);
+    return featureFailure(e, "Your reaction couldn’t be saved. Try again.");
   }
 }

@@ -68,6 +68,7 @@ interface RawPost {
   haCount: number;
   commentCount: number;
   viewerHasHa: boolean;
+  viewerHasDisliked: boolean;
   viewerHasSaved: boolean;
 }
 export async function fetchPostPage(
@@ -144,6 +145,7 @@ export async function fetchPostPage(
         haCount: raw.haCount,
         commentCount: raw.commentCount,
         viewerHasHa: raw.viewerHasHa,
+        viewerHasDisliked: raw.viewerHasDisliked,
         viewerHasSaved: raw.viewerHasSaved,
       };
     }),

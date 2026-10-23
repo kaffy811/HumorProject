@@ -18,6 +18,7 @@ function load(file, deps = {}) {
 const contracts = load("lib/post-contracts.ts");
 const mock = load("lib/mock-posts.ts", {
   "server-only": {},
+  "./post-reactions": load("lib/post-reactions.ts"),
   "./post-contracts": contracts,
 });
 const viewer = "publish-return-regression",

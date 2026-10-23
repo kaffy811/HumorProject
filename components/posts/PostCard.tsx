@@ -48,6 +48,7 @@ export function PostCard(props: Props) {
           haCount: 0,
           commentCount: 0,
           viewerHasHa: false,
+          viewerHasDisliked: false,
           viewerHasSaved: false,
         }
       : props.post;

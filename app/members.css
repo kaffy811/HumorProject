@@ -1964,3 +1964,14 @@
 .comment-replying > div { flex:1;min-width:0; }
 .composer-reply-excerpt { max-width:100%;font-weight:400; }
 @media(max-width:639px){.comment-replies{margin-left:12px;padding-left:12px;}.comment-replies .comment-replies{margin-left:10px;padding-left:10px;}.comment-level{font-size:8px;}.comment-replies > .comment-thread + .comment-thread{margin-top:12px;}}
+
+/* Paired, mutually exclusive reactions fit the existing image control rail. */
+.member-shell { --color-dislike:#757575; }
+.post-reactions { display:flex;align-items:flex-start;gap:10px; }
+.post-image-actions { align-items:flex-end; }
+.member-shell .post-overlay-button.is-dislike.is-active,.rank-ha.is-dislike.is-active { background:var(--color-paper); }
+.post-detail-actions { flex-wrap:wrap; }
+.post-detail-actions .post-reactions { gap:12px; }
+.rank-score { flex-basis:108px; }
+.rank-score .post-reactions { gap:8px; }
+@media(max-width:639px){.rank-score{flex-basis:100px;}.post-detail-actions{gap:10px;}.post-detail-actions .post-reactions{gap:10px;}.post-detail-actions .post-overlay-button{min-width:70px;padding-inline:10px;}}

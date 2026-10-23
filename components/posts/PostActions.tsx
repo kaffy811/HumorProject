@@ -3,9 +3,9 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { motion, useAnimationControls, useReducedMotion } from "framer-motion";
 import type { Post } from "@/lib/post-contracts";
-import { toggleHa, toggleSave, PostError } from "@/lib/posts";
+import { toggleSave, PostError } from "@/lib/posts";
 import { usePostFeedback } from "@/components/feed/FeedCacheProvider";
-import { HeartGlyph } from "./HeartGlyph";
+import { PostReactions } from "./PostReactions";
 export function PostActions({
   post,
   onUpdate,
@@ -19,55 +19,28 @@ export function PostActions({
   onOpen?: () => void;
   onUpdate: (change: Partial<Post> | null) => Promise<void>;
 }) {
-  const [busyHa, setBusyHa] = useState(false),
-    [heartBurst, setHeartBurst] = useState(0),
-    [busySave, setBusySave] = useState(false),
-    lockHa = useRef(false),
+  const [busySave, setBusySave] = useState(false),
     lockSave = useRef(false),
-    haControls = useAnimationControls(),
     saveControls = useAnimationControls(),
     reduced = useReducedMotion(),
     { notify } = usePostFeedback();
-  async function toggle(kind: "ha" | "save") {
-    const lock = kind === "ha" ? lockHa : lockSave;
-    if (lock.current) return;
-    lock.current = true;
-    const setBusy = kind === "ha" ? setBusyHa : setBusySave;
-    setBusy(true);
-    if (kind === "ha" && !post.viewerHasHa) setHeartBurst(n => n + 1);
-    const previous =
-      kind === "ha"
-        ? { haCount: post.haCount, viewerHasHa: post.viewerHasHa }
-        : { viewerHasSaved: post.viewerHasSaved };
-    if (!reduced)
-      void (kind === "ha" ? haControls : saveControls).start({
-        scaleY: [1, 0.9, 1],
-        transition: { duration: 0.28 },
-      });
+  async function save() {
+    if (lockSave.current) return;
+    lockSave.current = true;
+    setBusySave(true);
+    const previous = { viewerHasSaved: post.viewerHasSaved };
+    if (!reduced) void saveControls.start({ scaleY: [1, 0.9, 1], transition: { duration: 0.28 } });
     try {
-      await onUpdate(
-        kind === "ha"
-          ? {
-              viewerHasHa: !post.viewerHasHa,
-              haCount: Math.max(0, post.haCount + (post.viewerHasHa ? -1 : 1)),
-            }
-          : { viewerHasSaved: !post.viewerHasSaved },
-      );
-      const result=await (kind === "ha" ? toggleHa(post.id) : toggleSave(post.id));
+      await onUpdate({ viewerHasSaved: !post.viewerHasSaved });
+      const result = await toggleSave(post.id);
       await onUpdate(result);
-      if("showSavedHint" in result && result.showSavedHint)notify("Saved. Find it under your avatar → Saved.","/me?tab=saved");
-    } catch (e) {
+      if (result.showSavedHint) notify("Saved. Find it under your avatar → Saved.", "/me?tab=saved");
+    } catch (error) {
       await onUpdate(previous);
-      notify(
-        e instanceof PostError
-          ? e.message
-          : kind === "ha"
-            ? "Your like didn’t stick. Try again."
-            : "The bookmark didn’t stick. Try again.",
-      );
+      notify(error instanceof PostError ? error.message : "The bookmark didn’t stick. Try again.");
     } finally {
-      lock.current = false;
-      setBusy(false);
+      lockSave.current = false;
+      setBusySave(false);
     }
   }
   return (
@@ -76,22 +49,7 @@ export function PostActions({
       data-post-controls
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="post-action-group">
-        <motion.button
-          className={`post-overlay-button is-heart ${post.viewerHasHa ? "is-active" : ""}`}
-          aria-label={post.viewerHasHa ? "Unlike post" : "Like post"}
-          aria-pressed={post.viewerHasHa}
-          disabled={busyHa}
-          onClick={() => void toggle("ha")}
-          animate={haControls}
-        >
-          <HeartGlyph active={post.viewerHasHa} burst={heartBurst} />
-          {placement === "comments" && <span>{post.haCount}</span>}
-        </motion.button>
-        {placement !== "comments" && <span className="post-action-count" aria-label={`${post.haCount} likes`}>
-          {post.haCount}
-        </span>}
-      </div>
+      <PostReactions post={post} onUpdate={onUpdate} placement={placement} />
       {placement !== "comments" && <div className="post-action-group">
         <Link
           className="post-overlay-button"
@@ -126,7 +84,7 @@ export function PostActions({
           aria-label={post.viewerHasSaved ? "Unsave post" : "Save post"}
           aria-pressed={post.viewerHasSaved}
           disabled={busySave}
-          onClick={() => void toggle("save")}
+          onClick={() => void save()}
           animate={saveControls}
         >
           <svg

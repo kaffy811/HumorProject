@@ -1,4 +1,5 @@
 import "server-only";
+import { nextReaction, type ReactionState } from "./post-reactions";
 import { randomUUID } from "node:crypto";
 import {
   compareFeed,
@@ -22,7 +23,7 @@ type Session = {
   cutoff: string;
   added?: boolean;
   savedHintSeen?: boolean;
-  requests: Map<string, { haCount: number; viewerHasHa: boolean }>;
+  requests: Map<string, { id: string; kind: string }>;
 };
 const state = globalThis as typeof globalThis & {
   humorMockFeed?: {
@@ -68,6 +69,7 @@ function session(user: string) {
         haCount: 30 - i,
         commentCount: i % 7,
         viewerHasHa: false,
+          viewerHasDisliked: false,
         viewerHasSaved: false,
       })),
     };
@@ -135,19 +137,20 @@ export function mockList(
 export function mockAction(
   user: string,
   id: string,
-  kind: "ha" | "save" | "delete" | "report",
+  kind: "ha" | "dislike" | "save" | "delete" | "report",
   requestKey?: string,
 ) {
   const s = session(user),
     p = s.posts.find((x) => x.id === id);
   if (!p) throw new Error("Post not found");
-  if (kind === "ha") {
-    if (requestKey && s.requests.has(requestKey))
-      return s.requests.get(requestKey)!;
-    p.viewerHasHa = !p.viewerHasHa;
-    p.haCount += p.viewerHasHa ? 1 : -1;
-    const result = { haCount: p.haCount, viewerHasHa: p.viewerHasHa };
-    if (requestKey) s.requests.set(requestKey, result);
+  if (kind === "ha" || kind === "dislike") {
+    const previous = requestKey ? s.requests.get(requestKey) : undefined;
+    if (previous && (previous.id !== id || previous.kind !== kind)) throw new Error("Invalid request");
+    if (!previous) {
+      Object.assign(p, nextReaction(p, kind));
+      if (requestKey) s.requests.set(requestKey, { id, kind });
+    }
+    const result: ReactionState = { haCount: p.haCount, viewerHasHa: p.viewerHasHa, viewerHasDisliked: p.viewerHasDisliked };
     return result;
   }
   if (kind === "save") {
@@ -189,6 +192,7 @@ export function mockCheck(user: string, since: string) {
       createdAt: new Date().toISOString(),
       haCount: 40,
       viewerHasHa: false,
+          viewerHasDisliked: false,
       viewerHasSaved: false,
       author: {
         id: "mock-sam",
@@ -224,6 +228,7 @@ export function mockPublish(
       haCount: 0,
       commentCount: 0,
       viewerHasHa: false,
+          viewerHasDisliked: false,
       viewerHasSaved: false,
     };
   s.posts.unshift(post);

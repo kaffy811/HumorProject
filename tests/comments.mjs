@@ -68,6 +68,7 @@ assert.equal(contract.validateComment("A\nB"), true);
 assert.equal(contract.validateComment("a\u0000b"), false);
 const mockPost = load("lib/mock-posts.ts", {
   "server-only": {},
+  "./post-reactions": load("lib/post-reactions.ts"),
   "./post-contracts": post,
 });
 class StudioError extends Error {

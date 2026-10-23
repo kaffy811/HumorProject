@@ -1,4 +1,5 @@
 import type { PostPage, PostSort } from "./post-contracts";
+import type { ReactionState } from "./post-reactions";
 export class PostError extends Error {
   constructor(
     message: string,
@@ -32,7 +33,7 @@ export function listPosts({
   return read<PostPage>(`/api/posts?${q}`);
 }
 export function toggleHa(postId: string) {
-  return read<{ haCount: number; viewerHasHa: boolean }>(
+  return read<ReactionState>(
     `/api/posts/${postId}/ha`,
     {
       method: "POST",
@@ -40,6 +41,13 @@ export function toggleHa(postId: string) {
       body: JSON.stringify({ requestKey: crypto.randomUUID() }),
     },
   );
+}
+export function toggleDislike(postId: string) {
+  return read<ReactionState>(`/api/posts/${postId}/dislike`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ requestKey: crypto.randomUUID() }),
+  });
 }
 export function deletePost(postId: string) {
   return read<{ ok: boolean }>(`/api/posts/${postId}`, { method: "DELETE" });
