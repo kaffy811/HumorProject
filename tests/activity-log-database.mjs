@@ -32,8 +32,11 @@ try {
  const oldPost=(await db.query("insert into public.humor_captions(image_id,content)values($1,'Old joke')returning id",[oldImage])).rows[0].id;
  await db.query('insert into public.humor_votes(user_id,caption_id,value)values($1,$2,1)',[old,oldPost]);
  await db.exec(await readFile('supabase/migrations/202610220002_activity_log.sql','utf8'));
+ const backfilled=(await db.query('select action from public.humor_activity_log order by id')).rows.map(r=>r.action);
+ assert.deepEqual(backfilled,['signup','login','upload','publish','ha']);
+ await db.exec(await readFile('supabase/migrations/202610240001_vote_log_like_dislike.sql','utf8'));
  const actions=async(where='true',params=[])=>(await db.query(`select actor_id,category,action,via,post_id,detail from public.humor_activity_log where ${where} order by id`,params)).rows;
- assert.deepEqual((await actions()).map(r=>r.action),['signup','login','upload','publish','ha']);
+ assert.deepEqual((await actions()).map(r=>r.action),['signup','login','upload','publish','like'],'old Ha entries renamed');
  assert.ok((await actions()).every(r=>r.via==='system'&&r.detail.backfilled));
  await db.exec('truncate public.humor_activity_log');
 
@@ -50,6 +53,11 @@ try {
  await db.query('delete from public.humor_votes where user_id=$1 and caption_id=$2',[fan,post]);
  await db.query('insert into public.humor_votes(user_id,caption_id,value)values($1,$2,1)',[fan,post]);
  const comment=(await db.query("insert into public.humor_comments(caption_id,user_id,content)values($1,$2,'lol')returning id",[post,fan])).rows[0].id;
+ // Dislike: toggled on, switched to like and back, then removed (member Dislike button).
+ await db.query('insert into public.humor_votes(user_id,caption_id,value)values($1,$2,-1)',[member,post]);
+ await db.query('update public.humor_votes set value=1 where user_id=$1 and caption_id=$2',[member,post]);
+ await db.query('update public.humor_votes set value=-1 where user_id=$1 and caption_id=$2',[member,post]);
+ await db.query('delete from public.humor_votes where user_id=$1 and caption_id=$2',[member,post]);
  await db.query("insert into public.humor_comments(caption_id,user_id,content,reply_to_id)values($1,$2,'thanks',$3)",[post,member,comment]);
  await db.query('insert into public.humor_comment_votes(comment_id,user_id)values($1,$2)',[comment,member]);
  await db.query('insert into public.humor_saves(user_id,caption_id)values($1,$2)',[fan,post]);
@@ -70,7 +78,7 @@ try {
  const log=await actions();
  assert.deepEqual(log.map(r=>`${r.category}:${r.action}`),[
   'auth:signup','auth:signup','auth:signup','auth:login','profile:onboard','profile:update_profile','post:upload','ai:generate','post:publish',
-  'reaction:ha','reaction:unha','reaction:ha','comment:comment','comment:reply','reaction:heart','save:save','report:report_post','post:edit',
+  'reaction:like','reaction:unlike','reaction:like','comment:comment','reaction:dislike','reaction:like','reaction:dislike','reaction:undislike','comment:reply','reaction:heart','save:save','report:report_post','post:edit',
   'post:delete','admin:request_superadmin','admin:grant_superadmin','admin:approve_request','admin:grant_superadmin','auth:logout']);
  const del=log.find(r=>r.action==='delete');
  assert.equal(del.actor_id,admin);assert.equal(del.via,'admin');assert.equal(del.detail.ownerId,member);
@@ -96,5 +104,5 @@ try {
  assert.deepEqual(roles.map(r=>r.action),['request_superadmin','approve_request','grant_admin','revoke_admin']);
  assert.ok(roles.slice(1).every(r=>r.actor_id===admin&&r.via==='admin'),'credited to the superadmin');
  assert.equal(roles.at(-1).detail.ownerId,member);
- console.log('PASS activity log: backfill, sign-in/out, profile, upload, AI, publish/edit/delete, Ha/unHa, comments, hearts, saves, reports, admin attribution, superadmin flow; deletion cleanup not logged; private to the server.');
+ console.log('PASS activity log: backfill, sign-in/out, profile, upload, AI, publish/edit/delete, like/unlike/dislike/undislike and switching, comments, hearts, saves, reports, admin attribution, superadmin flow; deletion cleanup not logged; private to the server.');
 } finally { await db.close(); }
