@@ -11,10 +11,8 @@ export function PostActions({
   onUpdate,
   onComment,
   onOpen,
-  placement = "image",
 }: {
   post: Post;
-  placement?: "image" | "comments";
   onComment?: () => void;
   onOpen?: () => void;
   onUpdate: (change: Partial<Post> | null) => Promise<void>;
@@ -45,12 +43,14 @@ export function PostActions({
   }
   return (
     <div
-      className={placement === "comments" ? "post-detail-actions" : "post-image-actions"}
+      className="post-card-actions"
+      role="group"
+      aria-label="Post actions"
       data-post-controls
       onClick={(e) => e.stopPropagation()}
     >
-      <PostReactions post={post} onUpdate={onUpdate} placement={placement} />
-      {placement !== "comments" && <div className="post-action-group">
+      <PostReactions post={post} onUpdate={onUpdate} placement="card" />
+      <div className="post-action-group">
         <Link
           className="post-overlay-button"
           aria-label={`Comments, ${post.commentCount}`}
@@ -73,11 +73,9 @@ export function PostActions({
           >
             <path d="M4 4h16v12H9l-5 4V4Z" />
           </svg>
+          <span className="post-action-count" aria-hidden="true">{post.commentCount}</span>
         </Link>
-        <span className="post-action-count" aria-hidden="true">
-          {post.commentCount}
-        </span>
-      </div>}
+      </div>
       <div className="post-action-group">
         <motion.button
           className={`post-overlay-button ${post.viewerHasSaved ? "is-active" : ""}`}
@@ -98,7 +96,6 @@ export function PostActions({
           >
             <path d="M6 3h12v18l-6-4-6 4V3Z" />
           </svg>
-          {placement === "comments" && <span>{post.viewerHasSaved ? "Saved" : "Save"}</span>}
         </motion.button>
       </div>
     </div>

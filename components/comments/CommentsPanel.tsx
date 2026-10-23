@@ -12,8 +12,6 @@ import type { CommentThread } from "@/lib/comment-threads";
 import { CommentItem } from "./CommentItem";
 import { CommentComposer } from "./CommentComposer";
 import { usePostFeedback } from "@/components/feed/FeedCacheProvider";
-import { PostActions } from "@/components/posts/PostActions";
-import { usePostCache } from "@/hooks/usePostCache";
 import { COMMENT_DEPTH_ERROR, MAX_COMMENT_DEPTH } from "@/lib/comment-contracts";
 export function CommentsPanel({
   post,
@@ -25,7 +23,6 @@ export function CommentsPanel({
   input: RefObject<HTMLTextAreaElement | null>;
 }) {
   const panel = useRef<HTMLElement>(null);
-  const patchPost = usePostCache();
   const params = useSearchParams(),
     targetId = params.get("comment");
   const target = useSWR(
@@ -104,7 +101,6 @@ export function CommentsPanel({
       className={`comments-panel ${!comments.loading&&!comments.comments.length?"is-empty":""}`}
       aria-labelledby="comments-title"
     >
-      <PostActions post={post} placement="comments" onUpdate={change => patchPost(post, change)} />
       <header className="comments-heading">
         <h2 id="comments-title">
           Comments <span>{post.commentCount}</span>

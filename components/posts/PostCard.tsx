@@ -164,15 +164,15 @@ export function PostCard(props: Props) {
             {image}
           </Link>
         )}
-        {!preview && !detail && (
-          <PostActions
-            post={post}
-            onUpdate={props.onUpdate}
-            onComment={props.onComment}
-            onOpen={props.onOpen}
-          />
-        )}
       </div>
+      {!preview && (
+        <PostActions
+          post={post}
+          onUpdate={props.onUpdate}
+          onComment={props.onComment}
+          onOpen={props.onOpen}
+        />
+      )}
     </div>
   );
 }

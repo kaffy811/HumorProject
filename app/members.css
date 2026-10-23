@@ -1227,15 +1227,6 @@
   position: absolute;
   inset: 0;
 }
-.post-image-actions {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  z-index: 2;
-}
 .post-action-group {
   display: flex;
   flex-direction: column;
@@ -1939,8 +1930,6 @@
 .heart-glyph > img { position:absolute;inset:0;width:28px;height:28px;object-fit:cover;mix-blend-mode:multiply; }
 .member-shell .post-overlay-button.is-heart.is-active,.rank-ha.is-active { background:var(--color-paper); }
 .rank-ha { display:grid;place-items:center;padding:4px; }
-.post-detail-actions { display:flex;gap:12px;padding:0 0 20px;flex-shrink:0; }
-.post-detail-actions .post-overlay-button { display:flex;align-items:center;justify-content:center;gap:8px;width:auto;min-width:88px;padding:0 12px; }
 .comment-actions .comment-like { display:inline-flex;align-items:center;gap:5px; }
 .comment-like .heart-glyph { width:22px;height:22px;flex-basis:22px; }
 .comment-like .heart-glyph > svg { width:20px;height:20px; }
@@ -1968,10 +1957,18 @@
 /* Paired, mutually exclusive reactions fit the existing image control rail. */
 .member-shell { --color-dislike:#757575; }
 .post-reactions { display:flex;align-items:flex-start;gap:10px; }
-.post-image-actions { align-items:flex-end; }
 .member-shell .post-overlay-button.is-dislike.is-active,.rank-ha.is-dislike.is-active { background:var(--color-paper); }
-.post-detail-actions { flex-wrap:wrap; }
-.post-detail-actions .post-reactions { gap:12px; }
 .rank-score { flex-basis:108px; }
 .rank-score .post-reactions { gap:8px; }
-@media(max-width:639px){.rank-score{flex-basis:100px;}.post-detail-actions{gap:10px;}.post-detail-actions .post-reactions{gap:10px;}.post-detail-actions .post-overlay-button{min-width:70px;padding-inline:10px;}}
+@media(max-width:639px){.rank-score{flex-basis:100px;}}
+
+/* Keep every card action in one compact row, below the photograph. */
+.post-card-actions { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:center;gap:8px;padding:10px 12px;border-top:1px solid var(--color-ink);background:var(--color-paper); }
+.post-card-actions .post-reactions { display:contents; }
+.post-card-actions .post-action-group { min-width:0; }
+.member-shell .post-card-actions .post-overlay-button { width:100%;min-width:44px;height:44px;min-height:44px;display:flex;align-items:center;justify-content:center;gap:5px;padding:0 5px;box-shadow:2px 2px 0 var(--color-ink); }
+.post-card-actions .heart-glyph { width:24px;height:24px;flex-basis:24px; }
+.post-card-actions .heart-glyph > svg { width:22px;height:22px; }
+.post-card-actions .heart-glyph > img { width:24px;height:24px; }
+.post-card-actions .post-action-count { min-width:0;padding:0;background:transparent;font:11px/1 var(--font-label);white-space:nowrap; }
+.post-card.is-detail .post-card-actions { grid-template-columns:repeat(4,minmax(44px,72px)); }

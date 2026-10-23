@@ -10,10 +10,10 @@ import { BrokenHeartGlyph } from "./BrokenHeartGlyph";
 
 // A post can appear in several cached lists on the same screen.
 const pending = new Set<string>();
-export function PostReactions({ post, onUpdate, placement = "image" }: {
+export function PostReactions({ post, onUpdate, placement = "card" }: {
   post: Post;
   onUpdate: (change: Partial<Post> | null) => Promise<void>;
-  placement?: "image" | "comments" | "rank";
+  placement?: "card" | "rank";
 }) {
   const [busy, setBusy] = useState(false);
   const [bursts, setBursts] = useState({ ha: 0, dislike: 0 });
@@ -39,24 +39,22 @@ export function PostReactions({ post, onUpdate, placement = "image" }: {
       setBusy(false);
     }
   }
-  const detail = placement === "comments";
+  const card = placement === "card";
   const buttonClass = placement === "rank" ? "rank-ha" : "post-overlay-button";
-  return <div className={`post-reactions ${detail ? "is-detail" : ""}`} data-post-controls onClick={event => event.stopPropagation()}>
+  return <div className="post-reactions" data-post-controls onClick={event => event.stopPropagation()}>
     <div className="post-action-group">
       <motion.button type="button" className={`${buttonClass} is-heart ${post.viewerHasHa ? "is-active" : ""}`}
         aria-label={post.viewerHasHa ? "Unlike post" : "Like post"} title={post.viewerHasHa ? "Unlike" : "Like"}
         aria-pressed={post.viewerHasHa} disabled={busy} onClick={() => void toggle("ha")} animate={likeControls}>
         <HeartGlyph active={post.viewerHasHa} burst={bursts.ha} />
-        {detail && <span>{post.haCount}</span>}
+        {card && <span className="post-action-count" aria-label={`${post.haCount} likes`}>{post.haCount}</span>}
       </motion.button>
-      {placement === "image" && <span className="post-action-count" aria-label={`${post.haCount} likes`}>{post.haCount}</span>}
     </div>
     <div className="post-action-group">
       <motion.button type="button" className={`${buttonClass} is-dislike ${post.viewerHasDisliked ? "is-active" : ""}`}
         aria-label={post.viewerHasDisliked ? "Remove dislike" : "Dislike post"} title={post.viewerHasDisliked ? "Remove dislike" : "Dislike"}
         aria-pressed={post.viewerHasDisliked} disabled={busy} onClick={() => void toggle("dislike")} animate={dislikeControls}>
         <BrokenHeartGlyph active={post.viewerHasDisliked} burst={bursts.dislike} />
-        {detail && <span>Dislike</span>}
       </motion.button>
     </div>
   </div>;
