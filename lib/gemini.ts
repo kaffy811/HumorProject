@@ -117,21 +117,26 @@ export function geminiSettings() {
 export function captionPrompt(context: string) {
   return `Image: [image]\nDirection: ${context.trim() || "none"}`;
 }
+// Options let an admin-configured prompt chain step (lib/generation-route.ts)
+// choose the model, system prompt and config; the defaults are the built-in prompt.
 export async function generateCaptions(
   bytes: Uint8Array,
   mime: string,
   prompt = USER_PROMPT,
+  options: { model?: string; systemPrompt?: string; config?: object } = {},
 ) {
-  const { key, model } = geminiSettings();
+  const settings = geminiSettings();
+  const key = settings.key,
+    model = options.model ?? settings.model;
   const attempts = [];
   for (let attempt = 0; attempt < 2; attempt++) {
     const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
       {
         method: "POST",
         headers: { "x-goog-api-key": key, "Content-Type": "application/json" },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          systemInstruction: { parts: [{ text: options.systemPrompt ?? SYSTEM_PROMPT }] },
           contents: [
             {
               role: "user",
@@ -146,7 +151,7 @@ export async function generateCaptions(
               ],
             },
           ],
-          generationConfig: GENERATION_CONFIG,
+          generationConfig: options.config ?? GENERATION_CONFIG,
         }),
         signal: AbortSignal.timeout(45000),
       },
