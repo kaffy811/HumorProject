@@ -63,6 +63,9 @@ export function routeFromRow(row: MixRow, env: Record<string, string | undefined
   if (!PROVIDER_KEYS[provider]) return `no connector for provider ${provider || "(none)"}`;
   if (!env[PROVIDER_KEYS[provider]]) return `${PROVIDER_KEYS[provider]} is not set`;
   if (!step.system_prompt.trim() || !step.user_prompt.trim()) return `${chain.prompt_version} step 1 prompts are empty`;
+  // Without the placeholder the member's direction would be dropped (steps
+  // imported from old runs hold that run's literal prompt).
+  if (!step.user_prompt.includes("{direction}")) return `${chain.prompt_version} step 1 user prompt has no {direction}`;
   const schema = step.output_schema && typeof step.output_schema === "object" && !Array.isArray(step.output_schema) ? (step.output_schema as object) : null;
   const temperature = model.temperature === null ? null : Number(model.temperature);
   return {

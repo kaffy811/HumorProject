@@ -30,6 +30,7 @@ assert.match(reason(row(100,'x',model({humor_llm_providers:{slug:'anthropic'}}))
 assert.match(reason(row(100,'x'),{GEMINI_API_KEY:'g'}),/OPENAI_API_KEY is not set/);
 assert.match(reason(row(100,'x',model(),[])),/has no steps/);
 assert.match(reason(row(100,'x',null)),/has no model/);
+assert.match(reason(row(100,'x',model(),[{position:1,system_prompt:'s',user_prompt:'Image: [image]\nDirection: Butler at midnight',output_schema:null,humor_llm_models:model()}])),/has no \{direction\}/,'imported literal prompts are not used');
 assert.match(routes.chooseRoute([],env,0).reason,/no chain has a share/);
 assert.equal(routes.chooseRoute([row(100,'g',model({model_id:'gemini-3.8-flash',humor_llm_providers:{slug:'google'}}))],env,0).route.provider,'google');
 
