@@ -19,7 +19,7 @@ Checks: `npm test`, `npm run lint`, `npm run build`. Start a production server w
 - Automatic nullable-name profile creation on new accounts; backfill for existing accounts. First login prompts for a unique username, both names and an uploaded avatar.
 - Protected /profile, /studio and /feed pages. A private profile photo can be uploaded and replaced.
 - A five-step creator accepts JPEG/PNG/WebP/GIF up to 10 MB, starts private uploads immediately, generates four editable candidates, preserves an edited selection during regeneration and publishes atomically.
-- One structured Gemini image request generates the scene description and four captions. Prompts/configuration/model/image reference are saved before the provider call; atomic publication associates the real captions with their image and audit record.
+- One structured image request generates four captions. The model and prompt come from the Humor Admin prompt-chain mix (Gemini or OpenAI), falling back to the built-in Gemini prompt; see [admin model routing](docs/releases/2026-10-29-admin-model-routing.md). Prompts/configuration/model/image reference are saved before the provider call; atomic publication associates the real captions with their image and audit record.
 - One INSERT vote per Google-authenticated member with a complete profile per caption, with uniqueness, ownership and RLS. Duplicate requests return the saved vote.
 - The member feed offers server-ranked Hot/New sorting, cached infinite scrolling, Ha toggles, private reports, author deletion, manual new-post insertion and watermarked PNG sharing. Creator previews use the same PostCard. See [feed implementation and acceptance](docs/FEED.md).
 
