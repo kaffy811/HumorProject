@@ -24,6 +24,8 @@ export type MixRow = {
     prompt_version: string;
     humor_prompt_chain_steps: {
       position: number;
+      // Added by 202611050001; absent before it, meaning a single caption step.
+      output_kind?: string;
       system_prompt: string;
       user_prompt: string;
       output_schema: unknown;
@@ -54,6 +56,9 @@ export function routeFromRow(row: MixRow, env: Record<string, string | undefined
   if (!chain) return "chain missing";
   const step = [...(chain.humor_prompt_chain_steps ?? [])].sort((a, b) => a.position - b.position)[0];
   if (!step) return `${chain.prompt_version} has no steps`;
+  // Multi-step chains (Prompt Chain Tool) run only in the tool for now.
+  if (chain.humor_prompt_chain_steps.length > 1) return `${chain.prompt_version} has several steps`;
+  if (step.output_kind && step.output_kind !== "captions") return `${chain.prompt_version} step 1 does not return captions`;
   const model = step.humor_llm_models;
   if (!model) return `${chain.prompt_version} step 1 has no model`;
   const provider = model.humor_llm_providers?.slug ?? "";
@@ -100,7 +105,7 @@ type Db = { from: (table: string) => { select: (columns: string) => PromiseLike<
 // Reads the mix; null (use the built-in prompt) when the tables are absent or unusable.
 export async function loadGenerationRoute(db: Db, env: Record<string, string | undefined> = process.env, random = Math.random()) {
   const { data, error } = await db.from("humor_prompt_chain_mix").select(
-    "share,humor_prompt_chains(prompt_version,humor_prompt_chain_steps(position,system_prompt,user_prompt,output_schema,humor_llm_models(model_id,is_active,supports_vision,max_output_tokens,temperature,humor_llm_providers(slug))))",
+    "share,humor_prompt_chains(prompt_version,humor_prompt_chain_steps(*,humor_llm_models(model_id,is_active,supports_vision,max_output_tokens,temperature,humor_llm_providers(slug))))",
   );
   if (error) return { route: null, reason: `mix unavailable: ${error.message}` };
   return chooseRoute((data ?? []) as MixRow[], env, random);
