@@ -7,6 +7,8 @@ export type OpenAIOptions = {
   schema: object | null;
   maxOutputTokens: number | null;
   temperature: number | null;
+  // A later chain step may work from earlier text only.
+  includeImage?: boolean;
 };
 
 class SchemaRejected extends Error {}
@@ -45,12 +47,9 @@ export function openAIRequest(
         role: "user",
         content: [
           { type: "text", text: prompt },
-          {
-            type: "image_url",
-            image_url: {
-              url: `data:${mime};base64,${Buffer.from(bytes).toString("base64")}`,
-            },
-          },
+          ...(options.includeImage === false
+            ? []
+            : [{ type: "image_url", image_url: { url: `data:${mime};base64,${Buffer.from(bytes).toString("base64")}` } }]),
         ],
       },
     ],

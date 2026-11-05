@@ -123,7 +123,7 @@ export async function generateCaptions(
   bytes: Uint8Array,
   mime: string,
   prompt = USER_PROMPT,
-  options: { model?: string; systemPrompt?: string; config?: object } = {},
+  options: { model?: string; systemPrompt?: string; config?: object; includeImage?: boolean } = {},
 ) {
   const settings = geminiSettings();
   const key = settings.key,
@@ -140,14 +140,12 @@ export async function generateCaptions(
           contents: [
             {
               role: "user",
+              // A later chain step may work from earlier text only.
               parts: [
                 { text: prompt },
-                {
-                  inlineData: {
-                    mimeType: mime,
-                    data: Buffer.from(bytes).toString("base64"),
-                  },
-                },
+                ...(options.includeImage === false
+                  ? []
+                  : [{ inlineData: { mimeType: mime, data: Buffer.from(bytes).toString("base64") } }]),
               ],
             },
           ],

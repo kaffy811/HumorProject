@@ -21,15 +21,17 @@ import {
   GENERATION_CONFIG,
 } from "@/lib/gemini";
 import { generateOpenAICaptions } from "@/lib/openai";
+import { generateText } from "@/lib/chain-text";
 import {
   BUILTIN_VERSION,
   fillPrompt,
   loadGenerationRoute,
   type GenerationRoute,
+  type RouteStep,
 } from "@/lib/generation-route";
 
-// What is recorded as generation_config for an admin-configured route.
-function routeSettings(route: GenerationRoute) {
+// Model settings of one caption step, as sent and recorded.
+function routeSettings(route: RouteStep) {
   if (route.provider === "openai")
     return {
       response_format: route.schema ? "json_schema" : "json_object",
@@ -44,14 +46,36 @@ function routeSettings(route: GenerationRoute) {
     ...(route.temperature !== null ? { temperature: route.temperature } : {}),
   };
 }
-function callRoute(route: GenerationRoute, bytes: Uint8Array, prompt: string) {
-  if (route.provider === "openai")
-    return generateOpenAICaptions(bytes, "image/png", prompt, route);
-  return generateCaptions(bytes, "image/png", prompt, {
-    model: route.model,
-    systemPrompt: route.systemPrompt,
-    config: routeSettings(route),
-  });
+// Recorded as generation_config: the final step's settings, plus every step of a multi-step chain.
+function chainSettings(route: GenerationRoute) {
+  if (route.steps.length < 2) return routeSettings(route);
+  return {
+    ...routeSettings(route),
+    chain_steps: route.steps.map((s, i) => ({ position: i + 1, provider: s.provider, model: s.model, include_image: s.includeImage, output_kind: s.outputKind, system_prompt: s.systemPrompt, user_prompt: s.userTemplate })),
+  };
+}
+// Runs the chain's steps in order; text outputs feed later steps through
+// {previous}/{stepN}; the final step returns the four validated captions.
+async function callRoute(route: GenerationRoute, bytes: Uint8Array, direction: string) {
+  const outputs: string[] = [];
+  const trace: { position: number; provider: string; model: string; output: string; usage: unknown; latencyMs: number }[] = [];
+  for (const [index, step] of route.steps.entries()) {
+    const prompt = fillPrompt(step.userTemplate, direction, outputs);
+    const started = Date.now();
+    if (step.outputKind === "text") {
+      const result = await generateText({ provider: step.provider, model: step.model, systemPrompt: step.systemPrompt, prompt, image: step.includeImage ? { bytes, mime: "image/png" } : null, maxOutputTokens: step.maxOutputTokens, temperature: step.temperature });
+      outputs.push(result.text);
+      trace.push({ position: index + 1, provider: step.provider, model: step.model, output: result.text.slice(0, 4000), usage: result.usage, latencyMs: Date.now() - started });
+      continue;
+    }
+    const result = step.provider === "openai"
+      ? await generateOpenAICaptions(bytes, "image/png", prompt, step)
+      : await generateCaptions(bytes, "image/png", prompt, { model: step.model, systemPrompt: step.systemPrompt, config: routeSettings(step), includeImage: step.includeImage });
+    if (route.steps.length < 2) return { ...result, finalPrompt: prompt };
+    trace.push({ position: index + 1, provider: step.provider, model: step.model, output: JSON.stringify(result.captions), usage: result.usage, latencyMs: Date.now() - started });
+    return { ...result, finalPrompt: prompt, description: outputs[0] ?? result.description, usage: { ...result.usage, steps: trace } };
+  }
+  throw Error("The chain has no captions step.");
 }
 export const maxDuration = 120;
 export async function POST(request: Request) {
@@ -111,7 +135,7 @@ export async function POST(request: Request) {
         model_name: chosen?.model ?? builtinModel(),
         system_text: chosen?.systemPrompt ?? SYSTEM_PROMPT,
         user_text: chosen ? fillPrompt(chosen.userTemplate, input.context) : prompt,
-        settings: chosen ? routeSettings(chosen) : GENERATION_CONFIG,
+        settings: chosen ? chainSettings(chosen) : GENERATION_CONFIG,
         joke_style: "AUTO",
         extra_context: input.context,
         ...(withVersion ? { prompt_version_name: chosen?.promptVersion ?? BUILTIN_VERSION } : {}),
@@ -160,7 +184,7 @@ export async function POST(request: Request) {
               model: route?.model ?? builtinModel(),
               system_prompt: route?.systemPrompt ?? SYSTEM_PROMPT,
               user_prompt: route ? fillPrompt(route.userTemplate, input.context) : prompt,
-              generation_config: route ? routeSettings(route) : GENERATION_CONFIG,
+              generation_config: route ? chainSettings(route) : GENERATION_CONFIG,
               ...(reservedWithVersion ? { prompt_version: route?.promptVersion ?? BUILTIN_VERSION } : {}),
             }),
       })
@@ -186,7 +210,7 @@ export async function POST(request: Request) {
           usage: {},
         }
       : route
-        ? await callRoute(route, bytes, fillPrompt(route.userTemplate, input.context)).catch(async (failure) => {
+        ? await callRoute(route, bytes, input.context).catch(async (failure) => {
             // The configured model failed: switch this run to the built-in Gemini
             // prompt, record the switch, and try once more.
             // Gemini can take up to 2 × 45 s; only retry while that still fits in maxDuration.
@@ -216,6 +240,8 @@ export async function POST(request: Request) {
         caption_candidates: candidates,
         scene: result.description,
         usage_metadata: result.usage,
+        // Multi-step: record the final step's prompt as sent (it includes earlier outputs).
+        ...("finalPrompt" in result && route && route.steps.length > 1 ? { user_prompt: result.finalPrompt } : {}),
         completed_at: new Date().toISOString(),
         failure_stage: null,
       })
