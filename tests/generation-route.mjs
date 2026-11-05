@@ -3,7 +3,7 @@ function load(file,deps={}){const m={exports:{}};new Function('module','exports'
 const contracts=load('lib/create-contracts.ts'),gemini=load('lib/gemini.ts',{'./create-contracts':contracts});
 const routes=load('lib/generation-route.ts'),openai=load('lib/openai.ts',{'./gemini':gemini});
 const model=(extra={})=>({model_id:'gpt-6-astra',is_active:true,supports_vision:true,max_output_tokens:2048,temperature:null,humor_llm_providers:{slug:'openai'},...extra});
-const row=(share,version,m=model(),steps)=>({share,humor_prompt_chains:{prompt_version:version,humor_prompt_chain_steps:steps??[{position:2,system_prompt:'later',user_prompt:'u',output_schema:null,humor_llm_models:m},{position:1,system_prompt:'sys',user_prompt:'Image: [image]\nDirection: {direction}',output_schema:{type:'object'},humor_llm_models:m}]}});
+const row=(share,version,m=model(),steps)=>({share,humor_prompt_chains:{prompt_version:version,humor_prompt_chain_steps:steps??[{position:1,system_prompt:'sys',user_prompt:'Image: [image]\nDirection: {direction}',output_schema:{type:'object'},humor_llm_models:m}]}});
 const env={OPENAI_API_KEY:'k',GEMINI_API_KEY:'g'};
 
 // Weighted pick: share 0 never wins; random in [0,1) walks the shares.
@@ -14,7 +14,7 @@ assert.equal(routes.pickRow(mix,0.8).humor_prompt_chains.prompt_version,'challen
 assert.equal(routes.pickRow(mix,0.9999).humor_prompt_chains.prompt_version,'challenger');
 assert.equal(routes.pickRow([row(0,'off')],0.5),null);
 
-// Step 1 (by position) supplies the model and prompts.
+// The single step supplies the model and prompts.
 const picked=routes.chooseRoute(mix,env,0.1).route;
 assert.deepEqual({...picked},{provider:'openai',model:'gpt-6-astra',systemPrompt:'sys',userTemplate:'Image: [image]\nDirection: {direction}',schema:{type:'object'},maxOutputTokens:2048,temperature:null,promptVersion:'main',configured:true});
 assert.equal(routes.fillPrompt(picked.userTemplate,'  '),'Image: [image]\nDirection: none');
@@ -30,6 +30,8 @@ assert.match(reason(row(100,'x',model({humor_llm_providers:{slug:'anthropic'}}))
 assert.match(reason(row(100,'x'),{GEMINI_API_KEY:'g'}),/OPENAI_API_KEY is not set/);
 assert.match(reason(row(100,'x',model(),[])),/has no steps/);
 assert.match(reason(row(100,'x',null)),/has no model/);
+assert.match(reason(row(100,'x',model(),[{position:2,system_prompt:'later',user_prompt:'{previous}',output_schema:null,humor_llm_models:model()},{position:1,system_prompt:'s',user_prompt:'{direction}',output_schema:null,humor_llm_models:model()}])),/has several steps/,'members run single-step chains only');
+assert.match(reason(row(100,'x',model(),[{position:1,output_kind:'text',system_prompt:'s',user_prompt:'{direction}',output_schema:null,humor_llm_models:model()}])),/does not return captions/);
 assert.match(reason(row(100,'x',model(),[{position:1,system_prompt:'s',user_prompt:'Image: [image]\nDirection: Butler at midnight',output_schema:null,humor_llm_models:model()}])),/has no \{direction\}/,'imported literal prompts are not used');
 assert.match(routes.chooseRoute([],env,0).reason,/no chain has a share/);
 assert.equal(routes.chooseRoute([row(100,'g',model({model_id:'gemini-3.8-flash',humor_llm_providers:{slug:'google'}}))],env,0).route.provider,'google');
