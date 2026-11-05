@@ -16,7 +16,9 @@ assert.equal(routes.pickRow([row(0,'off')],0.5),null);
 
 // The single step supplies the model and prompts.
 const picked=routes.chooseRoute(mix,env,0.1).route;
-assert.deepEqual({...picked},{provider:'openai',model:'gpt-6-astra',systemPrompt:'sys',userTemplate:'Image: [image]\nDirection: {direction}',schema:{type:'object'},maxOutputTokens:2048,temperature:null,promptVersion:'main',configured:true});
+const {steps:pickedSteps,...pickedTop}=picked;
+assert.deepEqual(pickedTop,{provider:'openai',model:'gpt-6-astra',systemPrompt:'sys',userTemplate:'Image: [image]\nDirection: {direction}',schema:{type:'object'},maxOutputTokens:2048,temperature:null,includeImage:true,outputKind:'captions',promptVersion:'main',configured:true});
+assert.equal(pickedSteps.length,1);
 assert.equal(routes.fillPrompt(picked.userTemplate,'  '),'Image: [image]\nDirection: none');
 assert.equal(routes.fillPrompt(picked.userTemplate,'midterms'),'Image: [image]\nDirection: midterms');
 assert.equal(routes.chooseRoute([row(100,'t',model({temperature:'0.70'}))],env,0).route.temperature,0.7);
@@ -30,9 +32,24 @@ assert.match(reason(row(100,'x',model({humor_llm_providers:{slug:'anthropic'}}))
 assert.match(reason(row(100,'x'),{GEMINI_API_KEY:'g'}),/OPENAI_API_KEY is not set/);
 assert.match(reason(row(100,'x',model(),[])),/has no steps/);
 assert.match(reason(row(100,'x',null)),/has no model/);
-assert.match(reason(row(100,'x',model(),[{position:2,system_prompt:'later',user_prompt:'{previous}',output_schema:null,humor_llm_models:model()},{position:1,system_prompt:'s',user_prompt:'{direction}',output_schema:null,humor_llm_models:model()}])),/has several steps/,'members run single-step chains only');
-assert.match(reason(row(100,'x',model(),[{position:1,output_kind:'text',system_prompt:'s',user_prompt:'{direction}',output_schema:null,humor_llm_models:model()}])),/does not return captions/);
-assert.match(reason(row(100,'x',model(),[{position:1,system_prompt:'s',user_prompt:'Image: [image]\nDirection: Butler at midnight',output_schema:null,humor_llm_models:model()}])),/has no \{direction\}/,'imported literal prompts are not used');
+// Multi-step chains: steps run in order; the last returns captions.
+const S=(position,extra={})=>({position,system_prompt:'s',user_prompt:'{previous}',output_kind:'text',include_image:false,output_schema:null,humor_llm_models:model(),...extra});
+const three=[S(3,{output_kind:'captions',output_schema:{type:'object'}}),S(1,{user_prompt:'Describe. {direction}',include_image:true}),S(2,{humor_llm_models:model({model_id:'gemini-3.8-flash',humor_llm_providers:{slug:'google'}})})];
+const multi=routes.chooseRoute([row(100,'three',model(),three)],env,0).route;
+assert.deepEqual(multi.steps.map(s=>[s.provider,s.outputKind,s.includeImage]),[['openai','text',true],['google','text',false],['openai','captions',false]],'sorted by position');
+assert.equal(multi.outputKind,'captions');assert.equal(multi.provider,'openai','top level is the final step');assert.deepEqual(multi.schema,{type:'object'});
+assert.match(reason(row(100,'x',model(),[S(1,{user_prompt:'{direction}',include_image:true}),S(2)])),/last step does not return captions/);
+assert.match(reason(row(100,'x',model(),[S(1,{user_prompt:'{direction}',include_image:true,output_kind:'captions'}),S(2,{output_kind:'captions'})])),/step 1 returns captions before the last step/);
+assert.match(reason(row(100,'x',model(),[S(1,{user_prompt:'{direction}'}),S(2,{output_kind:'captions'})])),/no step that sees the photo/);
+assert.match(reason(row(100,'x',model(),[S(1,{user_prompt:'Describe',include_image:true}),S(2,{output_kind:'captions'})])),/never uses \{direction\}/,'imported literal prompts are not used');
+assert.match(reason(row(100,'x',model(),[S(1,{user_prompt:'{previous} {direction}',include_image:true}),S(2,{output_kind:'captions'})])),/step 1 uses \{previous\}/);
+assert.match(reason(row(100,'x',model(),[S(1,{user_prompt:'{direction}',include_image:true}),S(2,{user_prompt:'{step2}',output_kind:'captions'})])),/step 2 uses \{step2\}, which has not run yet/);
+assert.match(reason(row(100,'x',model(),[1,2,3,4,5].map(n=>S(n,{user_prompt:'{direction}',include_image:true,output_kind:n===5?'captions':'text'})))),/more than 4 steps/);
+assert.match(reason(row(100,'x',model({supports_vision:false}),[S(1,{user_prompt:'{direction}',include_image:true,humor_llm_models:model()}),S(2,{output_kind:'captions',humor_llm_models:model({supports_vision:false})})])) ?? '',/^$/,'a text-only final step may use a model without vision');
+assert.equal(routes.chooseRoute([row(100,'x',model(),[S(1,{user_prompt:'{direction}',include_image:true}),S(2,{output_kind:'captions',humor_llm_models:model({supports_vision:false})})])],env,0).route.steps[1].includeImage,false);
+assert.equal(routes.fillPrompt('A {previous} B {step1} C {direction}','',['one','two']),'A two B one C none');
+// Old single steps (before 202611050001) have no output_kind / include_image: one caption step that sees the photo.
+assert.deepEqual(routes.chooseRoute([row(100,'old',model(),[{position:1,system_prompt:'s',user_prompt:'{direction}',output_schema:null,humor_llm_models:model()}])],env,0).route.steps.map(s=>[s.outputKind,s.includeImage]),[['captions',true]]);
 assert.match(routes.chooseRoute([],env,0).reason,/no chain has a share/);
 assert.equal(routes.chooseRoute([row(100,'g',model({model_id:'gemini-3.8-flash',humor_llm_providers:{slug:'google'}}))],env,0).route.provider,'google');
 
