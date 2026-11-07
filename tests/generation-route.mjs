@@ -66,6 +66,9 @@ assert.equal(body.messages[1].content[1].image_url.url,'data:image/png;base64,QU
 assert.deepEqual(body.response_format,{type:'json_schema',json_schema:{name:'captions',strict:true,schema:{type:'object'}}});
 assert.equal(body.max_completion_tokens,512);assert.equal('temperature' in body,false);
 assert.equal(openai.openAIRequest(new Uint8Array(),'image/png','p',{model:'m',systemPrompt:'s',schema:null,maxOutputTokens:null,temperature:0.5}).response_format.type,'json_object');
+// OpenAI's JSON mode needs the word JSON in the messages: added only when missing.
+assert.equal(openai.openAIRequest(new Uint8Array(),'image/png','User input: subway',{model:'m',systemPrompt:'Write captions.',schema:null,maxOutputTokens:null,temperature:null}).messages[0].content,'Write captions.\n\nRespond with JSON.');
+assert.equal(openai.openAIRequest(new Uint8Array(),'image/png','Return JSON only.',{model:'m',systemPrompt:'Write captions.',schema:null,maxOutputTokens:null,temperature:null}).messages[0].content,'Write captions.');
 
 // OpenAI call: validated like Gemini, schema rejection retries once in JSON mode, errors surface.
 const good={captions:[['A','deadpan'],['B','roast'],['C','pun'],['D','absurd']].map(([caption,style])=>({caption,style}))};
