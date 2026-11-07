@@ -42,7 +42,8 @@ export function openAIRequest(
   const body: Record<string, unknown> = {
     model: options.model,
     messages: [
-      { role: "system", content: options.systemPrompt },
+      // OpenAI's plain JSON mode refuses messages that never mention JSON.
+      { role: "system", content: options.schema || /json/i.test(`${options.systemPrompt}\n${prompt}`) ? options.systemPrompt : `${options.systemPrompt.trimEnd()}\n\nRespond with JSON.` },
       {
         role: "user",
         content: [
